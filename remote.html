@@ -2,58 +2,94 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#0b0f1a">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#0b0d17">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <title>MyTV Télécommande</title>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-:root { --bg:#0b0d17; --card:#1a1e33; --fg:#f2f4ff; --mut:#a4a9c4; --acc:#7c5cff; }
-* { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
-body { margin:0; background:var(--bg); color:var(--fg); font:16px/1.3 'Space Grotesk',system-ui,sans-serif; padding:16px 16px 40px; max-width:520px; margin:0 auto; }
-h1 { font-size:20px; margin:4px 0 2px; } h2 { font-size:13px; letter-spacing:.08em; text-transform:uppercase; color:var(--mut); margin:22px 0 8px; }
-#st { font-size:13px; color:var(--mut); }
-.grid { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
-button { border:0; border-radius:14px; background:var(--card); color:var(--fg); font:inherit; padding:14px 8px; }
-button:active { transform:scale(.96); filter:brightness(1.3); }
-.app { height:84px; font-weight:600; color:#fff; }
-.pad { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; max-width:300px; margin:0 auto; }
-.pad button { height:68px; font-size:24px; } .pad .ok { background:var(--acc); color:#fff; font-weight:700; font-size:18px; }
-.row { display:flex; gap:10px; flex-wrap:wrap; } .row button { flex:1; min-width:80px; }
-input { width:100%; padding:12px; border-radius:12px; border:1px solid #2a3350; background:var(--card); color:var(--fg); font:inherit; }
-#chs { margin-top:8px; display:flex; flex-direction:column; gap:6px; } #chs button { text-align:left; padding:12px; }
-#setup { display:none; background:var(--card); border-radius:14px; padding:14px; margin-top:14px; }
-#toast { position:fixed; left:50%; bottom:18px; transform:translateX(-50%); background:#000c; padding:8px 14px; border-radius:20px; font-size:14px; opacity:0; transition:opacity .2s; pointer-events:none; }
+:root { --bg:#0b0d17; --fg:#f2f4ff; --card:#1a1e33; --card2:#262b47; --mut:#a4a9c4; --acc:#7c5cff; --on:#ffffff; }
+* { box-sizing:border-box; -webkit-tap-highlight-color:transparent; -webkit-user-select:none; user-select:none; -webkit-touch-callout:none; }
+html, body { margin:0; height:100%; background:var(--bg); color:var(--fg); font:17px/1.25 'Space Grotesk', system-ui, sans-serif; transition:background .4s; overscroll-behavior:none; }
+#app { max-width:480px; height:100%; margin:0 auto; display:flex; flex-direction:column; padding-top:env(safe-area-inset-top); }
+header { flex:none; display:flex; align-items:center; justify-content:space-between; padding:18px 20px 6px; }
+header h1 { margin:0; font-size:22px; font-weight:600; letter-spacing:-.01em; }
+#chip { display:flex; align-items:center; gap:8px; font-size:14px; color:var(--mut); background:var(--card); padding:7px 12px; border-radius:20px; }
+#chip i { width:9px; height:9px; border-radius:50%; background:#777; }
+#chip.on i { background:#3ddc84; box-shadow:0 0 8px #3ddc84; } #chip.on { color:var(--fg); }
+main { flex:1; min-height:0; overflow-y:auto; padding:8px 20px 20px; }
+.page { display:none; } .page.show { display:block; }
+h2 { font-size:14px; font-weight:400; color:var(--mut); margin:22px 0 10px; }
+button { border:0; font:inherit; color:inherit; background:var(--card); border-radius:20px; transition:transform .1s, filter .1s, background .15s; touch-action:manipulation; }
+button:active, .down { transform:scale(.95); filter:brightness(1.3); }
+.apps { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; }
+.app { aspect-ratio:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; font-size:15px; font-weight:600; padding:0; }
+.app b { width:56px; height:56px; border-radius:30%; display:flex; align-items:center; justify-content:center; font-size:30px; color:#fff; }
+.app.sent { background:var(--acc); color:var(--on); }
+.dpad { position:relative; width:260px; height:260px; margin:6px auto 0; border-radius:50%; background:var(--card); }
+.dpad button { position:absolute; width:86px; height:86px; background:transparent; border-radius:50%; font-size:26px; color:var(--mut); display:flex; align-items:center; justify-content:center; padding:0; }
+.dpad .u { left:87px; top:6px; } .dpad .d { left:87px; bottom:6px; } .dpad .l { left:6px; top:87px; } .dpad .r { right:6px; top:87px; }
+.dpad .ok { left:77px; top:77px; width:106px; height:106px; background:var(--acc); color:var(--on); font-weight:700; font-size:20px; }
+.row3 { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-top:18px; }
+.row3 button { height:56px; font-weight:500; font-size:16px; }
+input { width:100%; height:52px; border-radius:26px; border:2px solid transparent; background:var(--card); color:var(--fg); padding:0 22px; font:inherit; -webkit-user-select:text; user-select:text; outline:none; }
+input:focus { border-color:var(--acc); }
+.sticky { position:sticky; top:-8px; z-index:2; background:var(--bg); padding:8px 0 10px; }
+.count { font-size:14px; color:var(--mut); margin:8px 4px 0; }
+#chs { display:flex; flex-direction:column; gap:8px; }
+.ch { height:60px; padding:0 14px; display:flex; align-items:center; gap:14px; text-align:left; border-radius:18px; }
+.ch u { flex:none; width:40px; height:40px; border-radius:12px; background:var(--card2); color:var(--mut); display:flex; align-items:center; justify-content:center; font:12px 'Space Grotesk',monospace; text-decoration:none; }
+.ch span { min-width:0; flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-weight:500; }
+.card { background:var(--card); border-radius:24px; padding:18px; margin-bottom:12px; }
+.card h3 { margin:0 0 12px; font-size:14px; font-weight:400; color:var(--mut); }
+.themes { display:grid; grid-template-columns:repeat(2,1fr); gap:10px; }
+.theme { height:84px; background:var(--card2); border:2px solid transparent; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:7px; font-size:15px; font-weight:500; }
+.theme.sel { border-color:var(--acc); }
+.tp { position:relative; width:62px; height:34px; border-radius:9px; border:2px solid; }
+.tp b { position:absolute; left:6px; top:6px; width:28px; height:7px; border-radius:4px; } .tp u { position:absolute; right:6px; bottom:5px; width:12px; height:12px; border-radius:50%; }
+.seg { display:flex; gap:6px; background:var(--card2); border-radius:22px; padding:5px; margin-bottom:10px; }
+.seg button { flex:1; height:42px; background:transparent; border-radius:17px; font-size:15px; color:var(--mut); padding:0 4px; }
+.seg button.sel { background:var(--acc); color:var(--on); }
+.wide { width:100%; height:52px; background:var(--card2); font-weight:500; margin-top:2px; }
+.wide.danger { color:var(--mut); font-size:15px; background:transparent; }
+nav { flex:none; padding:8px 16px calc(14px + env(safe-area-inset-bottom)); }
+nav div { display:flex; gap:6px; padding:6px; border-radius:32px; background:var(--card); }
+nav button { flex:1; height:50px; border-radius:26px; background:transparent; color:var(--mut); font-weight:500; }
+nav button.sel { background:var(--acc); color:var(--on); }
+#setup { display:none; margin:40px 20px; background:var(--card); border-radius:24px; padding:22px; line-height:1.4; }
+#toast { position:fixed; left:50%; bottom:90px; transform:translateX(-50%); background:#000d; color:#fff; padding:10px 18px; border-radius:16px; font-size:15px; opacity:0; transition:opacity .2s; pointer-events:none; white-space:nowrap; max-width:90vw; overflow:hidden; text-overflow:ellipsis; }
 </style>
 </head>
 <body>
-<h1>MyTV Télécommande</h1>
-<div id="st"></div>
-<div id="setup">Aucune TV liée. Sur la TV, ouvre <b>Réglages → Télécommande téléphone</b> puis scanne le QR code avec ton téléphone.</div>
-
-<div id="main">
-<h2>Applications</h2>
-<div class="grid" id="apps"></div>
-
-<h2>Navigation</h2>
-<div class="pad">
-  <span></span><button data-k="up">▲</button><span></span>
-  <button data-k="left">◀</button><button data-k="ok" class="ok">OK</button><button data-k="right">▶</button>
-  <button data-c="home">⌂</button><button data-k="down">▼</button><button data-k="back">⮌</button>
-</div>
-
-<h2>Thème</h2>
-<div class="row" id="themes"></div>
-
-<h2>Halo lumineux</h2>
-<div class="row" id="glows"></div>
-<div class="row" style="margin-top:10px" id="intens"></div>
-
-<h2>Chaînes TV</h2>
-<input id="q" placeholder="Rechercher une chaîne…" autocomplete="off">
-<div id="chs"></div>
-<div class="row" style="margin-top:10px"><button data-c="stop">Arrêter la lecture</button><button data-c="reload">Mettre à jour la TV</button></div>
+<div id="app">
+  <header><h1>MyTV</h1><div id="chip"><i></i><span>En attente…</span></div></header>
+  <div id="setup">Aucune TV liée. Sur la TV, ouvre <b>Réglages → Télécommande téléphone</b> puis scanne le QR code avec ton téléphone.</div>
+  <main id="main">
+    <section class="page show" id="p-pad">
+      <h2>Applications</h2><div class="apps" id="apps"></div>
+      <h2>Navigation</h2>
+      <div class="dpad">
+        <button class="u" data-k="up" data-rep>▲</button><button class="l" data-k="left" data-rep>◀</button>
+        <button class="ok" data-k="ok">OK</button>
+        <button class="r" data-k="right" data-rep>▶</button><button class="d" data-k="down" data-rep>▼</button>
+      </div>
+      <div class="row3"><button data-k="back">⮌ Retour</button><button data-c="home">⌂ Accueil</button><button data-c="stop">■ Stop</button></div>
+    </section>
+    <section class="page" id="p-tv">
+      <div class="sticky"><input id="q" placeholder="Rechercher une chaîne…" autocomplete="off" enterkeyhint="search"><div class="count" id="count"></div></div>
+      <div id="chs"></div>
+    </section>
+    <section class="page" id="p-set">
+      <div class="card"><h3>Thème</h3><div class="themes" id="themes"></div></div>
+      <div class="card"><h3>Halo lumineux</h3><div class="seg" id="glows"></div><div class="seg" id="intens"></div></div>
+      <div class="card"><h3>Application</h3>
+        <button class="wide" data-c="reload">Mettre à jour la TV</button>
+        <button class="wide danger" id="unlink">Changer de TV</button>
+        <div class="count" id="ver"></div></div>
+    </section>
+  </main>
+  <nav><div id="tabs"><button class="sel" data-p="p-pad">Manette</button><button data-p="p-tv">Chaînes</button><button data-p="p-set">Réglages</button></div></nav>
 </div>
 <div id="toast"></div>
 
@@ -61,40 +97,102 @@ input { width:100%; padding:12px; border-radius:12px; border:1px solid #2a3350; 
 (function () {
   var BASE = 'https://ntfy.sh/', M3U = 'https://iptv-org.github.io/iptv/countries/fr.m3u';
   var APPS = [['YouTube','#e62117'],['Netflix','#e50914'],['Disney+','#113ccf'],['Prime Video','#00a8e1'],['Jellyfin','#8f5fc9']];
-  var THEMES = ['aurora','sunset','forest','mono'];
-  var GLOWS = [['video','Vidéo'],['pulse','Pulsation'],['rainbow','Arc-en-ciel'],['off','Éteint']];
+  var TH = { aurora:['#0b0d17','#1a1e33','#262b47','#7c5cff','#f2f4ff','#a4a9c4','#fff'], sunset:['#1a0d12','#2e1a22','#3d242d','#ff6a3d','#fff3ef','#c9a9b0','#1a0d12'],
+             forest:['#09140f','#14281d','#1d3a29','#3ddc84','#effaf3','#9fc0ae','#09140f'], mono:['#0d0d0d','#202020','#2e2e2e','#ffffff','#f5f5f5','#a6a6a6','#0d0d0d'] };
+  var GLOWS = [['video','Vidéo'],['pulse','Pulse'],['rainbow','Arc-en-ciel'],['off','Éteint']];
+  var INTENS = [['0','Faible'],['1','Moyen'],['2','Fort']];
   var $ = function (s) { return document.querySelector(s); };
-  var topic = '';
-  try {
-    var h = location.hash.replace(/^#/, '');
-    if (/^mytv-[a-z0-9]{8,}$/.test(h)) { localStorage.setItem('mytv.topic', h); history.replaceState(null, '', location.pathname); }
-    topic = localStorage.getItem('mytv.topic') || '';
-  } catch (e) { var m = /^mytv-[a-z0-9]{8,}$/.exec(location.hash.slice(1)); topic = m ? m[0] : ''; }
+  var ST = function (k, v) { try { if (v === undefined) return localStorage.getItem('mytv.' + k); if (v === null) localStorage.removeItem('mytv.' + k); else localStorage.setItem('mytv.' + k, v); } catch (e) {} };
+  var topic = '', m = /^mytv-[a-z0-9]{8,}$/.exec(location.hash.slice(1));
+  if (m) { ST('topic', m[0]); try { history.replaceState(null, '', location.pathname); } catch (e) {} }
+  topic = ST('topic') || '';
+
+  function skin(name) {
+    var c = TH[name]; if (!c) return; var r = document.documentElement.style;
+    ['--bg','--card','--card2','--acc','--fg','--mut','--on'].forEach(function (k, i) { r.setProperty(k, c[i]); });
+    document.querySelector('meta[name=theme-color]').content = c[0]; ST('theme', name);
+  }
+  skin(ST('theme') || 'aurora');
 
   var tt;
-  function toast(t) { var o = $('#toast'); o.textContent = t; o.style.opacity = 1; clearTimeout(tt); tt = setTimeout(function () { o.style.opacity = 0; }, 1500); }
-  function send(msg) {
-    if (!topic) return;
-    if (navigator.vibrate) navigator.vibrate(15);
-    fetch(BASE + topic, { method: 'POST', body: msg }).then(function (r) { if (!r.ok) throw 0; toast('Envoyé'); })
-      .catch(function () { toast('Échec : pas de connexion'); });
+  function toast(t) { var o = $('#toast'); o.textContent = t; o.style.opacity = 1; clearTimeout(tt); tt = setTimeout(function () { o.style.opacity = 0; }, 1400); }
+  function buzz(n) { if (navigator.vibrate) navigator.vibrate(n || 12); }
+  function send(msg, label) {
+    buzz();
+    fetch(BASE + topic, { method: 'POST', body: msg }).then(function (r) { if (!r.ok) throw 0; if (label) toast(label); })
+      .catch(function () { toast('Pas de connexion'); });
   }
-  function btn(parent, label, msg, color) {
-    var b = document.createElement('button'); b.textContent = label;
-    if (color) { b.className = 'app'; b.style.background = color; }
-    b.onclick = function () { send(msg); }; parent.appendChild(b); return b;
+
+  if (!topic) { $('#setup').style.display = 'block'; $('#main').style.display = 'none'; $('nav').style.display = 'none'; $('#chip').style.display = 'none'; return; }
+
+  /* ---- état de la TV (reçu via le même relais) ---- */
+  var tv = { at: 0, theme: '', glow: '', inten: '' }, seen = '';
+  function paint() {
+    var on = Date.now() - tv.at < 75000;
+    $('#chip').className = on ? 'on' : ''; $('#chip span').textContent = on ? 'TV connectée' : (tv.at ? 'TV hors ligne' : 'En attente de la TV…');
+    [].forEach.call(document.querySelectorAll('.theme'), function (b) { b.classList.toggle('sel', b.dataset.t === tv.theme); });
+    [].forEach.call(document.querySelectorAll('#glows button'), function (b) { b.classList.toggle('sel', b.dataset.v === tv.glow); });
+    [].forEach.call(document.querySelectorAll('#intens button'), function (b) { b.classList.toggle('sel', b.dataset.v === String(tv.inten)); });
   }
-  if (!topic) { $('#setup').style.display = 'block'; $('#main').style.display = 'none'; return; }
-  $('#st').textContent = 'TV liée · ' + topic.slice(0, 9) + '…';
+  function listen() {
+    var es = new EventSource(BASE + topic + '/sse');
+    es.onopen = function () { send('ping'); };
+    es.onmessage = function (ev) {
+      try {
+        var j = JSON.parse(ev.data), t = String(j.message || '');
+        if (j.event && j.event !== 'message') return; if (j.id === seen) return; seen = j.id;
+        if (t.indexOf('state:') !== 0) return;
+        var s = JSON.parse(t.slice(6)); tv.at = Date.now(); tv.theme = s.theme; tv.glow = s.glow; tv.inten = s.inten;
+        if (s.theme) skin(s.theme); if (s.v) $('#ver').textContent = 'Version TV ' + s.v; paint();
+      } catch (e) {}
+    };
+  }
+  setInterval(paint, 5000); listen();
 
-  APPS.forEach(function (a) { btn($('#apps'), a[0], 'app:' + a[0], a[1]); });
-  [].forEach.call(document.querySelectorAll('[data-k]'), function (b) { b.onclick = function () { send('key:' + b.dataset.k); }; });
-  [].forEach.call(document.querySelectorAll('[data-c]'), function (b) { b.onclick = function () { send(b.dataset.c); }; });
-  THEMES.forEach(function (t) { btn($('#themes'), t, 'theme:' + t); });
-  GLOWS.forEach(function (g) { btn($('#glows'), g[1], 'glow:' + g[0]); });
-  [['Faible',0],['Moyen',1],['Fort',2]].forEach(function (i) { btn($('#intens'), i[0], 'inten:' + i[1]); });
+  /* ---- onglets ---- */
+  [].forEach.call(document.querySelectorAll('#tabs button'), function (b) {
+    b.onclick = function () {
+      buzz(8);
+      [].forEach.call(document.querySelectorAll('#tabs button'), function (x) { x.classList.toggle('sel', x === b); });
+      [].forEach.call(document.querySelectorAll('.page'), function (p) { p.classList.toggle('show', p.id === b.dataset.p); });
+      $('#main').scrollTop = 0; if (b.dataset.p === 'p-tv') loadChannels();
+    };
+  });
 
-  var channels = null;
+  /* ---- manette ---- */
+  APPS.forEach(function (a) {
+    var b = document.createElement('button'); b.className = 'app';
+    b.innerHTML = '<b style="background:' + a[1] + '">' + a[0].charAt(0) + '</b><span></span>'; b.lastChild.textContent = a[0];
+    b.onclick = function () { b.classList.add('sent'); setTimeout(function () { b.classList.remove('sent'); }, 600); send('app:' + a[0], 'Ouverture de ' + a[0] + '…'); };
+    $('#apps').appendChild(b);
+  });
+  [].forEach.call(document.querySelectorAll('[data-k]'), function (b) {
+    var k = b.dataset.k, iv, to;
+    function fire() { buzz(8); fetch(BASE + topic, { method: 'POST', body: 'key:' + k }).catch(function () { toast('Pas de connexion'); }); }
+    function stop() { clearTimeout(to); clearInterval(iv); b.classList.remove('down'); }
+    b.addEventListener('pointerdown', function (e) {
+      e.preventDefault(); b.classList.add('down'); fire();
+      if (b.hasAttribute('data-rep')) to = setTimeout(function () { iv = setInterval(fire, 220); }, 450);
+    });
+    ['pointerup', 'pointerleave', 'pointercancel'].forEach(function (ev) { b.addEventListener(ev, stop); });
+    b.addEventListener('contextmenu', function (e) { e.preventDefault(); });
+  });
+  [].forEach.call(document.querySelectorAll('[data-c]'), function (b) { b.onclick = function () { send(b.dataset.c, b.dataset.c === 'reload' ? 'Mise à jour demandée' : ''); }; });
+
+  /* ---- réglages ---- */
+  Object.keys(TH).forEach(function (t) {
+    var c = TH[t], b = document.createElement('button'); b.className = 'theme'; b.dataset.t = t;
+    b.innerHTML = '<div class="tp" style="background:' + c[0] + ';border-color:' + c[2] + '"><b style="background:' + c[1] + '"></b><u style="background:' + c[3] + '"></u></div><span></span>';
+    b.lastChild.textContent = t.charAt(0).toUpperCase() + t.slice(1);
+    b.onclick = function () { tv.theme = t; skin(t); paint(); send('theme:' + t); };
+    $('#themes').appendChild(b);
+  });
+  GLOWS.forEach(function (g) { var b = document.createElement('button'); b.textContent = g[1]; b.dataset.v = g[0]; b.onclick = function () { tv.glow = g[0]; paint(); send('glow:' + g[0]); }; $('#glows').appendChild(b); });
+  INTENS.forEach(function (g) { var b = document.createElement('button'); b.textContent = g[1]; b.dataset.v = g[0]; b.onclick = function () { tv.inten = g[0]; paint(); send('inten:' + g[0]); }; $('#intens').appendChild(b); });
+  $('#unlink').onclick = function () { if (confirm('Délier ce téléphone de la TV ?')) { ST('topic', null); location.reload(); } };
+
+  /* ---- chaînes ---- */
+  var channels = null, loading = false;
   function parse(txt) {
     var out = [], name = null;
     txt.split(/\r?\n/).forEach(function (l) {
@@ -106,14 +204,21 @@ input { width:100%; padding:12px; border-radius:12px; border:1px solid #2a3350; 
   function render() {
     var q = $('#q').value.toLowerCase(), box = $('#chs'); box.innerHTML = '';
     if (!channels) return;
-    channels.filter(function (n) { return n.toLowerCase().indexOf(q) >= 0; }).slice(0, 30).forEach(function (n) { btn(box, n, 'tv:' + n); });
+    var list = channels.filter(function (n) { return n.toLowerCase().indexOf(q) >= 0; });
+    $('#count').textContent = list.length ? list.length + ' chaîne' + (list.length > 1 ? 's' : '') : 'Aucune chaîne';
+    list.slice(0, 60).forEach(function (n) {
+      var b = document.createElement('button'); b.className = 'ch';
+      b.innerHTML = '<u></u><span></span>'; b.firstChild.textContent = n.replace(/[^A-Za-z0-9+]/g, '').slice(0, 3).toUpperCase(); b.lastChild.textContent = n;
+      b.onclick = function () { send('tv:' + n, 'Lecture : ' + n); }; box.appendChild(b);
+    });
   }
-  $('#q').addEventListener('focus', function () {
-    if (channels) return;
+  function loadChannels() {
+    if (channels || loading) return; loading = true; $('#count').textContent = 'Chargement…';
     fetch(M3U).then(function (r) { return r.text(); }).then(function (t) { channels = parse(t); render(); })
-      .catch(function () { toast('Playlist inaccessible'); });
-  });
+      .catch(function () { $('#count').textContent = 'Playlist inaccessible'; }).then(function () { loading = false; });
+  }
   $('#q').addEventListener('input', render);
+  paint();
 })();
 </script>
 </body>

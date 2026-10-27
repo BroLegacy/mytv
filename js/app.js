@@ -1,6 +1,6 @@
 (function () {
   'use strict';
-  var VERSION = '1.2.1'; window.MYTV_VERSION = VERSION;
+  var VERSION = '1.3.0'; window.MYTV_VERSION = VERSION;
   var UPDATE_URL = 'https://brolegacy.github.io/mytv/version.json'; // TizenBrew met aussi l'app à jour tout seul
   var DEFAULT_M3U = 'https://iptv-org.github.io/iptv/countries/fr.m3u';
   var THEMES = ['aurora', 'sunset', 'forest', 'mono'];
@@ -269,7 +269,15 @@
     }
     return t;
   }
+  function publishState() {
+    try { fetch(REMOTE_BASE + topic(), { method: 'POST', body: 'state:' + JSON.stringify({ v: VERSION, theme: S.theme, glow: S.glow, inten: S.inten }) }); } catch (e) {}
+  }
   function remoteCmd(m) {
+    if (m.indexOf('state:') === 0) return;
+    if (m === 'ping') return publishState();
+    remoteDo(m); setTimeout(publishState, 300);
+  }
+  function remoteDo(m) {
     var i = m.indexOf(':'), c = i < 0 ? m : m.slice(0, i), a = i < 0 ? '' : m.slice(i + 1);
     if (c === 'app') {
       var f = FAV_APPS.filter(function (x) { return x.name === a; })[0];
@@ -285,12 +293,13 @@
     else if (c === 'reload') location.reload();
     else if (c === 'home') { stop(); show('home'); }
   }
+  setInterval(function () { if (remote.es) publishState(); }, 30000);
   function remoteStatus(t) { if (remote.st) remote.st.textContent = t; }
   function remoteConnect() {
     if (remote.es) { remote.es.close(); remote.es = null; }
     if (!window.EventSource) return remoteStatus('Télécommande indisponible sur cette TV');
     var es = remote.es = new EventSource(REMOTE_BASE + topic() + '/sse');
-    es.onopen = function () { remoteStatus('Télécommande connectée'); };
+    es.onopen = function () { remoteStatus('Télécommande connectée'); publishState(); };
     es.onerror = function () { remoteStatus('Télécommande : reconnexion…'); };
     es.onmessage = function (ev) {
       try {
