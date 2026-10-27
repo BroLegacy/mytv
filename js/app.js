@@ -139,7 +139,7 @@
     var msg = $('#updMsg');
     if (!UPDATE_URL) { if (manual) msg.textContent = 'UPDATE_URL non configurée'; return; }
     fetch(UPDATE_URL + '?t=' + Math.floor(new Date().getTime() / 60000)).then(function (r) { return r.json(); }).then(function (j) {
-      if (newer(j.version, VERSION) && !j.url) { msg.textContent = 'Version ' + j.version + ' disponible (mise à jour via TizenBrew)'; }
+      if (newer(j.version, VERSION) && !j.url) { msg.textContent = 'Version ' + j.version + ' disponible : ferme puis relance MyTV'; }
       else if (newer(j.version, VERSION) && j.url) { msg.textContent = 'Mise à jour ' + j.version + '…'; setTimeout(function () { location.href = j.url; }, 800); }
       else if (manual) msg.textContent = 'À jour (v' + VERSION + ')';
     }).catch(function () { if (manual) msg.textContent = 'Vérification impossible'; });
