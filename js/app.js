@@ -1,6 +1,6 @@
 (function () {
   'use strict';
-  var VERSION = '1.0.1';
+  var VERSION = '1.0.2';
   var UPDATE_URL = 'https://brolegacy.github.io/mytv/version.json'; // TizenBrew met aussi l'app à jour tout seul
   var DEFAULT_M3U = 'https://iptv-org.github.io/iptv/countries/fr.m3u';
   var THEMES = ['aurora', 'sunset', 'forest', 'mono'];
