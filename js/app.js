@@ -1,9 +1,12 @@
 (function () {
   'use strict';
-  var VERSION = '1.1.1'; window.MYTV_VERSION = VERSION;
+  var VERSION = '1.2.0'; window.MYTV_VERSION = VERSION;
   var UPDATE_URL = 'https://brolegacy.github.io/mytv/version.json'; // TizenBrew met aussi l'app à jour tout seul
   var DEFAULT_M3U = 'https://iptv-org.github.io/iptv/countries/fr.m3u';
   var THEMES = ['aurora', 'sunset', 'forest', 'mono'];
+  // couleurs des aperçus de thème (miroir de css/style.css)
+  var TH = { aurora: ['#0b0d17', '#1a1e33', '#262b47', '#7c5cff'], sunset: ['#1a0d12', '#2e1a22', '#3d242d', '#ff6a3d'],
+             forest: ['#09140f', '#14281d', '#1d3a29', '#3ddc84'], mono: ['#0d0d0d', '#202020', '#2e2e2e', '#ffffff'] };
   var GLOW_MODES = ['video', 'pulse', 'rainbow', 'off'];
   var GLOW_LABEL = { video: 'Halo : suit la vidéo', pulse: 'Halo : pulsation', rainbow: 'Halo : arc-en-ciel', off: 'Halo : éteint' };
   // re : nom de l'app sur la TV (retrouvée automatiquement, avec son icône) ; id : identifiant de secours
@@ -23,15 +26,26 @@
   var S = { theme: store.get('theme', 'aurora'), glow: store.get('glow', 'video'), inten: store.get('inten', 2), m3u: store.get('m3u', DEFAULT_M3U), channels: [], view: 'home' };
 
   /* ---------- horloge ---------- */
-  function tick() { var d = new Date(); $('#clock').textContent = ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2); }
+  var DAYS = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'];
+  var MONTHS = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
+  function tick() {
+    var d = new Date();
+    $('#clock').textContent = ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2);
+    $('#date').textContent = DAYS[d.getDay()] + ' ' + d.getDate() + ' ' + MONTHS[d.getMonth()];
+  }
   setInterval(tick, 10000); tick();
 
   /* ---------- thèmes ---------- */
-  function applyTheme() { document.body.setAttribute('data-theme', S.theme); store.set('theme', S.theme); }
+  function applyTheme() {
+    document.body.setAttribute('data-theme', S.theme); store.set('theme', S.theme);
+    [].forEach.call(document.querySelectorAll('.theme'), function (b) { b.classList.toggle('sel', b.dataset.t === S.theme); });
+  }
   function buildThemes() {
     var box = $('#themes'); box.innerHTML = '';
     THEMES.forEach(function (t) {
-      var b = document.createElement('button'); b.className = 'f'; b.textContent = t;
+      var c = TH[t], b = document.createElement('button'); b.className = 'f theme'; b.dataset.t = t;
+      b.innerHTML = '<div class="tp" style="background:' + c[0] + ';border-color:' + c[2] + '"><b style="background:' + c[1] + '"></b><u style="background:' + c[3] + '"></u></div><span></span>';
+      b.lastChild.textContent = t.charAt(0).toUpperCase() + t.slice(1);
       b.onclick = function () { S.theme = t; applyTheme(); };
       box.appendChild(b);
     });
@@ -85,13 +99,13 @@
   function iconUrl(p) { return !p ? '' : (/^(\/|[a-zA-Z]:)/.test(p) ? 'file://' + p : p); }
   // tuile : icône réelle de l'app sur la TV, sinon pastille colorée avec l'initiale
   function appBtn(name, id, icon, color) {
-    var b = document.createElement('button'); b.className = 'f app';
-    var ic = document.createElement('div'); ic.className = 'ico'; ic.style.background = color || 'var(--acc)';
+    var b = document.createElement('button'); b.className = 'f app ' + (color ? 'big' : 'small');
+    var ic = document.createElement('div'); ic.className = 'ico' + (color ? '' : ' plain'); if (color) ic.style.background = color;
     ic.textContent = name.charAt(0).toUpperCase();
     var u = iconUrl(icon);
     if (u) {
       var im = new Image();
-      im.onload = function () { ic.textContent = ''; ic.style.background = 'none'; ic.appendChild(im); };
+      im.onload = function () { ic.textContent = ''; ic.style.background = 'none'; ic.classList.remove('plain'); ic.appendChild(im); };
       im.src = u;
     }
     var lb = document.createElement('span'); lb.textContent = name;
@@ -142,16 +156,21 @@
   }
   function renderChannels() {
     var q = $('#search').value.toLowerCase(), box = $('#channels'); box.innerHTML = '';
-    S.channels.filter(function (c) { return c.name.toLowerCase().indexOf(q) >= 0; }).slice(0, 40).forEach(function (c) {
+    var list = S.channels.filter(function (c) { return c.name.toLowerCase().indexOf(q) >= 0; });
+    $('#count').textContent = list.length ? list.length + ' chaîne' + (list.length > 1 ? 's' : '') : 'Aucune chaîne';
+    list.slice(0, 200).forEach(function (c) {
       var b = document.createElement('button'); b.className = 'f ch';
-      b.innerHTML = (c.logo ? '<img src="' + c.logo.replace(/"/g, '') + '">' : '') + '<span></span>';
-      b.lastChild.textContent = c.name; b.onclick = function () { play(c); }; box.appendChild(b);
+      var lg = document.createElement('div'); lg.className = 'logo'; lg.textContent = c.name.replace(/[^A-Za-z0-9+]/g, '').slice(0, 3).toUpperCase();
+      if (c.logo) { var im = new Image(); im.onload = function () { lg.textContent = ''; lg.appendChild(im); }; im.src = c.logo; }
+      var n = document.createElement('span'); n.className = 'n'; n.textContent = c.name;
+      b.appendChild(lg); b.appendChild(n); b.onclick = function () { play(c); }; box.appendChild(b);
     });
   }
   var hls = null, osdT;
   function play(c) {
     var p = $('#player'), v = $('#video'); p.hidden = false; taint = false;
-    $('#osd').textContent = c.name; clearTimeout(osdT); osdT = setTimeout(function () { $('#osd').textContent = ''; }, 4000);
+    $('#osd').innerHTML = '<b></b><small>Retour pour quitter</small>'; $('#osd').firstChild.textContent = c.name;
+    clearTimeout(osdT); osdT = setTimeout(function () { $('#osd').innerHTML = ''; }, 4000);
     if (hls) { hls.destroy(); hls = null; }
     v.crossOrigin = 'anonymous';
     if (window.Hls && Hls.isSupported() && /\.m3u8/.test(c.url)) { hls = new Hls(); hls.loadSource(c.url); hls.attachMedia(v); }
@@ -193,7 +212,7 @@
     if (!el) return;
     el.classList.add('focus');
     if (el.tagName === 'INPUT') el.focus();
-    el.scrollIntoView({ block: 'nearest' });
+    el.scrollIntoView({ block: 'nearest', inline: 'nearest' });
   }
   function move(dir) {
     var cur = $('.focus'), all = focusables(); if (!cur) return setFocus(all[0]);
@@ -283,21 +302,19 @@
     remote.link.textContent = url;
     remote.qr.innerHTML = '';
     var go = function () {
-      try { var q = qrcode(0, 'M'); q.addData(url); q.make(); remote.qr.innerHTML = q.createImgTag(6, 8); } catch (e) {}
+      try { var q = qrcode(0, 'M'); q.addData(url); q.make(); remote.qr.innerHTML = q.createImgTag(5, 12); } catch (e) {}
     };
     if (window.qrcode) return go();
     var s = document.createElement('script'); s.src = QR_LIB; s.onload = go; document.head.appendChild(s);
   }
   function buildRemote() {
-    var sec = $('#settings'), h = document.createElement('h2'), row = document.createElement('div');
-    h.textContent = 'Télécommande téléphone'; row.className = 'row';
-    var btn = document.createElement('button'); btn.className = 'f'; btn.textContent = 'Nouveau code';
+    var card = $('#remoteCard'), rm = document.createElement('div'), side = document.createElement('div');
+    rm.className = 'rm'; side.id = 'remoteSide';
+    var btn = document.createElement('button'); btn.className = 'f pill'; btn.textContent = 'Nouveau code';
     remote.st = document.createElement('span');
-    remote.qr = document.createElement('div'); remote.link = document.createElement('div');
-    remote.link.style.cssText = 'font-size:22px;opacity:.8;margin-top:8px;word-break:break-all';
-    remote.qr.style.cssText = 'margin-top:12px';
-    row.appendChild(btn); row.appendChild(remote.st);
-    sec.appendChild(h); sec.appendChild(row); sec.appendChild(remote.qr); sec.appendChild(remote.link);
+    remote.qr = document.createElement('div'); remote.link = document.createElement('div'); remote.link.id = 'remoteLink';
+    side.appendChild(remote.st); side.appendChild(btn); side.appendChild(remote.link);
+    rm.appendChild(remote.qr); rm.appendChild(side); card.appendChild(rm);
     btn.onclick = function () { topic(true); drawQr(); remoteConnect(); };
     drawQr(); remoteConnect();
   }

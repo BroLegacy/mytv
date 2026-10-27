@@ -10,11 +10,7 @@
 <div id="glow"></div>
 <header>
   <div id="clock"></div>
-  <nav id="tabs">
-    <button class="f tab" data-view="home">Accueil</button>
-    <button class="f tab" data-view="tv">Chaînes</button>
-    <button class="f tab" data-view="settings">Réglages</button>
-  </nav>
+  <div id="date"></div>
 </header>
 
 <main>
@@ -22,27 +18,37 @@
     <h2>Mes applications</h2>
     <div id="shelf" class="row"></div>
     <h2>Toutes les applications installées</h2>
-    <div id="allapps" class="row wrap"></div>
+    <div id="allapps" class="row"></div>
   </section>
 
   <section id="tv" class="view" hidden>
-    <input id="search" class="f" placeholder="Rechercher une chaîne…">
+    <div class="bar">
+      <input id="search" class="f" placeholder="Rechercher une chaîne…">
+      <div id="count"></div>
+    </div>
     <div id="channels" class="grid"></div>
   </section>
 
   <section id="settings" class="view" hidden>
-    <h2>Thème</h2><div id="themes" class="row"></div>
-    <h2>Halo lumineux</h2>
-    <div class="row">
-      <button class="f" id="glowMode"></button>
-      <button class="f" id="glowInt"></button>
+    <div class="card c2"><h3>Thème</h3><div id="themes" class="row"></div></div>
+    <div class="card"><h3>Halo lumineux</h3>
+      <div class="row wrap"><button class="f pill" id="glowMode"></button><button class="f pill" id="glowInt"></button></div>
     </div>
-    <h2>Playlist IPTV (M3U)</h2>
-    <div class="row"><input id="m3u" class="f wide"><button class="f" id="m3uSave">Charger</button></div>
-    <h2>Mises à jour</h2>
-    <div class="row"><button class="f" id="upd">Rechercher</button><span id="updMsg"></span></div>
+    <div class="card"><h3>Playlist IPTV (M3U)</h3>
+      <input id="m3u" class="f"><div class="row"><button class="f pill" id="m3uSave">Charger</button></div>
+    </div>
+    <div class="card"><h3>Mises à jour</h3>
+      <div class="row"><button class="f pill" id="upd">Rechercher</button></div><span id="updMsg"></span>
+    </div>
+    <div class="card" id="remoteCard"><h3>Télécommande téléphone</h3></div>
   </section>
 </main>
+
+<nav id="tabs">
+  <button class="f tab" data-view="home">Accueil<i></i></button>
+  <button class="f tab" data-view="tv">Chaînes<i></i></button>
+  <button class="f tab" data-view="settings">Réglages<i></i></button>
+</nav>
 
 <div id="player" hidden>
   <video id="video" autoplay playsinline></video>
