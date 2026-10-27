@@ -1,6 +1,6 @@
 (function () {
   'use strict';
-  var VERSION = '1.0.7'; window.MYTV_VERSION = VERSION;
+  var VERSION = '1.1.0'; window.MYTV_VERSION = VERSION;
   var UPDATE_URL = 'https://brolegacy.github.io/mytv/version.json'; // TizenBrew met aussi l'app à jour tout seul
   var DEFAULT_M3U = 'https://iptv-org.github.io/iptv/countries/fr.m3u';
   var THEMES = ['aurora', 'sunset', 'forest', 'mono'];
@@ -98,12 +98,14 @@
     b.appendChild(ic); b.appendChild(lb); b.onclick = function () { launch(id); };
     return b;
   }
+  var appIds = {};
   function drawShelf(list) {
     var shelf = $('#shelf'); shelf.innerHTML = '';
     FAV_APPS.forEach(function (f) {
       var re = new RegExp(f.re, 'i'), hit = null;
       (list || []).forEach(function (a) { if (!hit && (a.id === f.id || re.test(a.name))) hit = a; });
-      shelf.appendChild(appBtn(f.name, hit ? hit.id : f.id, hit && hit.iconPath, f.color));
+      appIds[f.name] = hit ? hit.id : f.id;
+      shelf.appendChild(appBtn(f.name, appIds[f.name], hit && hit.iconPath, f.color));
     });
   }
   function buildApps() {
@@ -132,10 +134,10 @@
     });
     return out;
   }
-  function loadM3U() {
+  function loadM3U(cb) {
     $('#channels').textContent = 'Chargement…';
     fetch(S.m3u).then(function (r) { return r.text(); }).then(function (t) {
-      S.channels = parseM3U(t); renderChannels();
+      S.channels = parseM3U(t); renderChannels(); if (cb) cb();
     }).catch(function () { $('#channels').textContent = 'Playlist inaccessible'; });
   }
   function renderChannels() {
@@ -202,16 +204,18 @@
     });
     if (best) setFocus(best);
   }
-  document.addEventListener('keydown', function (e) {
-    var k = e.keyCode, inp = document.activeElement && document.activeElement.tagName === 'INPUT';
-    if (!$('#player').hidden) { if (k === 10009 || k === 8) { stop(); e.preventDefault(); } return; }
+  // renvoie true si la touche a été traitée
+  function onKey(k) {
+    var inp = document.activeElement && document.activeElement.tagName === 'INPUT';
+    if (!$('#player').hidden) { if (k === 10009 || k === 8) { stop(); return true; } return false; }
     if (k === 37) { if (!inp) move('l'); } else if (k === 39) { if (!inp) move('r'); }
     else if (k === 38) move('u'); else if (k === 40) move('d');
     else if (k === 13) { var c = $('.focus'); if (c && c.tagName !== 'INPUT') c.click(); }
     else if (k === 10009) { if (S.view !== 'home') show('home'); }
-    else return;
-    e.preventDefault();
-  });
+    else return false;
+    return true;
+  }
+  document.addEventListener('keydown', function (e) { if (onKey(e.keyCode)) e.preventDefault(); });
   $('#search').addEventListener('input', renderChannels);
 
   function show(v) {
@@ -223,6 +227,76 @@
     setTimeout(function () { var f = focusables(); setFocus(f.filter(function (x) { return !x.classList.contains('tab'); })[0] || f[0]); }, 50);
   }
 
+  /* ---------- télécommande téléphone (relais ntfy.sh) ---------- */
+  var REMOTE_BASE = 'https://ntfy.sh/', REMOTE_PAGE = 'https://brolegacy.github.io/mytv/remote.html';
+  var QR_LIB = 'https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js';
+  var KEYS = { up: 38, down: 40, left: 37, right: 39, ok: 13, back: 10009 };
+  var remote = { es: null, lastId: '', box: null };
+  function topic(renew) {
+    var t = store.get('topic', '');
+    if (!t || renew) {
+      var a = new Uint8Array(12), i;
+      try { crypto.getRandomValues(a); } catch (e) { for (i = 0; i < 12; i++) a[i] = Math.random() * 256; }
+      t = 'mytv-'; for (i = 0; i < 12; i++) t += (a[i] % 36).toString(36);
+      store.set('topic', t);
+    }
+    return t;
+  }
+  function remoteCmd(m) {
+    var i = m.indexOf(':'), c = i < 0 ? m : m.slice(0, i), a = i < 0 ? '' : m.slice(i + 1);
+    if (c === 'app') {
+      var f = FAV_APPS.filter(function (x) { return x.name === a; })[0];
+      if (f) { toast('Télécommande : ' + f.name); launch(appIds[f.name] || f.id); }
+    } else if (c === 'key') { if (KEYS[a]) onKey(KEYS[a]); }
+    else if (c === 'theme') { if (THEMES.indexOf(a) >= 0) { S.theme = a; applyTheme(); } }
+    else if (c === 'glow') { if (GLOW_MODES.indexOf(a) >= 0) { S.glow = a; store.set('glow', a); glowLabels(); } }
+    else if (c === 'inten') { S.inten = Math.max(0, Math.min(2, +a || 0)); store.set('inten', S.inten); glowLabels(); }
+    else if (c === 'tv') {
+      var go = function () { var ch = S.channels.filter(function (x) { return x.name === a; })[0]; if (ch) play(ch); };
+      if (S.channels.length) go(); else loadM3U(go);
+    } else if (c === 'stop') stop();
+    else if (c === 'home') { stop(); show('home'); }
+  }
+  function remoteStatus(t) { if (remote.st) remote.st.textContent = t; }
+  function remoteConnect() {
+    if (remote.es) { remote.es.close(); remote.es = null; }
+    if (!window.EventSource) return remoteStatus('Télécommande indisponible sur cette TV');
+    var es = remote.es = new EventSource(REMOTE_BASE + topic() + '/sse');
+    es.onopen = function () { remoteStatus('Télécommande connectée'); };
+    es.onerror = function () { remoteStatus('Télécommande : reconnexion…'); };
+    es.onmessage = function (ev) {
+      try {
+        var j = JSON.parse(ev.data);
+        if (j.event && j.event !== 'message') return;
+        if (j.id && j.id === remote.lastId) return;
+        remote.lastId = j.id; remoteCmd(String(j.message || ''));
+      } catch (e) {}
+    };
+  }
+  function drawQr() {
+    var url = REMOTE_PAGE + '#' + topic();
+    remote.link.textContent = url;
+    remote.qr.innerHTML = '';
+    var go = function () {
+      try { var q = qrcode(0, 'M'); q.addData(url); q.make(); remote.qr.innerHTML = q.createImgTag(6, 8); } catch (e) {}
+    };
+    if (window.qrcode) return go();
+    var s = document.createElement('script'); s.src = QR_LIB; s.onload = go; document.head.appendChild(s);
+  }
+  function buildRemote() {
+    var sec = $('#settings'), h = document.createElement('h2'), row = document.createElement('div');
+    h.textContent = 'Télécommande téléphone'; row.className = 'row';
+    var btn = document.createElement('button'); btn.className = 'f'; btn.textContent = 'Nouveau code';
+    remote.st = document.createElement('span');
+    remote.qr = document.createElement('div'); remote.link = document.createElement('div');
+    remote.link.style.cssText = 'font-size:22px;opacity:.8;margin-top:8px;word-break:break-all';
+    remote.qr.style.cssText = 'margin-top:12px';
+    row.appendChild(btn); row.appendChild(remote.st);
+    sec.appendChild(h); sec.appendChild(row); sec.appendChild(remote.qr); sec.appendChild(remote.link);
+    btn.onclick = function () { topic(true); drawQr(); remoteConnect(); };
+    drawQr(); remoteConnect();
+  }
+
   /* ---------- init ---------- */
   [].forEach.call(document.querySelectorAll('.tab'), function (t) { t.onclick = function () { show(t.dataset.view); }; });
   $('#glowMode').onclick = function () { S.glow = GLOW_MODES[(GLOW_MODES.indexOf(S.glow) + 1) % GLOW_MODES.length]; store.set('glow', S.glow); glowLabels(); };
@@ -230,5 +304,5 @@
   $('#m3u').value = S.m3u;
   $('#m3uSave').onclick = function () { S.m3u = $('#m3u').value; store.set('m3u', S.m3u); S.channels = []; show('tv'); };
   $('#upd').onclick = function () { checkUpdate(true); };
-  applyTheme(); buildThemes(); glowLabels(); buildApps(); show('home'); checkUpdate(false);
+  applyTheme(); buildThemes(); glowLabels(); buildApps(); buildRemote(); show('home'); checkUpdate(false);
 })();
