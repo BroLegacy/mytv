@@ -1,6 +1,6 @@
 (function () {
   'use strict';
-  var VERSION = '1.1.0'; window.MYTV_VERSION = VERSION;
+  var VERSION = '1.1.1'; window.MYTV_VERSION = VERSION;
   var UPDATE_URL = 'https://brolegacy.github.io/mytv/version.json'; // TizenBrew met aussi l'app à jour tout seul
   var DEFAULT_M3U = 'https://iptv-org.github.io/iptv/countries/fr.m3u';
   var THEMES = ['aurora', 'sunset', 'forest', 'mono'];
@@ -173,8 +173,12 @@
   function checkUpdate(manual) {
     var msg = $('#updMsg');
     if (!UPDATE_URL) { if (manual) msg.textContent = 'UPDATE_URL non configurée'; return; }
-    fetch(UPDATE_URL + '?t=' + Math.floor(new Date().getTime() / 60000)).then(function (r) { return r.json(); }).then(function (j) {
-      if (newer(j.version, VERSION) && !j.url) { msg.textContent = 'Version ' + j.version + ' disponible : ferme puis relance MyTV'; }
+    fetch(UPDATE_URL + '?t=' + Math.floor(new Date().getTime() / 60000), { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (j) {
+      if (newer(j.version, VERSION) && !j.url) {
+        // le chargeur récupère le code en ligne à chaque démarrage : recharger suffit (une seule fois par version, pour éviter une boucle)
+        if (store.get('reloaded', '') === j.version) { msg.textContent = 'Version ' + j.version + ' disponible : ferme puis relance MyTV'; }
+        else { store.set('reloaded', j.version); msg.textContent = 'Mise à jour ' + j.version + '… rechargement'; toast('Mise à jour ' + j.version + '…'); setTimeout(function () { location.reload(); }, 1200); }
+      }
       else if (newer(j.version, VERSION) && j.url) { msg.textContent = 'Mise à jour ' + j.version + '…'; setTimeout(function () { location.href = j.url; }, 800); }
       else if (manual) msg.textContent = 'À jour (v' + VERSION + ')';
     }).catch(function () { if (manual) msg.textContent = 'Vérification impossible'; });
@@ -255,6 +259,7 @@
       var go = function () { var ch = S.channels.filter(function (x) { return x.name === a; })[0]; if (ch) play(ch); };
       if (S.channels.length) go(); else loadM3U(go);
     } else if (c === 'stop') stop();
+    else if (c === 'reload') location.reload();
     else if (c === 'home') { stop(); show('home'); }
   }
   function remoteStatus(t) { if (remote.st) remote.st.textContent = t; }
