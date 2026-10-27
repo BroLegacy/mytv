@@ -1,6 +1,6 @@
 (function () {
   'use strict';
-  var VERSION = '1.4.1'; window.MYTV_VERSION = VERSION;
+  var VERSION = '1.5.0'; window.MYTV_VERSION = VERSION;
   var UPDATE_URL = 'https://brolegacy.github.io/mytv/version.json'; // TizenBrew met aussi l'app à jour tout seul
   var DEFAULT_M3U = 'https://iptv-org.github.io/iptv/countries/fr.m3u';
   var THEMES = ['aurora', 'sunset', 'forest', 'mono'];
@@ -10,17 +10,19 @@
   var GLOW_MODES = ['video', 'pulse', 'rainbow', 'off'];
   var GLOW_LABEL = { video: 'Halo : suit la vidéo', pulse: 'Halo : pulsation', rainbow: 'Halo : arc-en-ciel', off: 'Halo : éteint' };
   // re : nom de l'app sur la TV (retrouvée automatiquement, avec son icône) ; id : identifiant de secours
+  var GLYPH_URL = 'https://cdn.jsdelivr.net/npm/simple-icons@11.14.0/icons/';
   var FAV_APPS = [
-    { name: 'YouTube', ids: ['9Ur5IzDKqV.TizenYouTube', 'com.samsung.tv.cobalt-yt'], color: '#e62117' },
+    { name: 'YouTube', ids: ['9Ur5IzDKqV.TizenYouTube', 'com.samsung.tv.cobalt-yt'], color: '#e62117', slug: 'youtube' },
     { name: 'Disney+', ids: ['MCmYXNxgcu.DisneyPlus'], color: '#113ccf' },
-    { name: 'Netflix', ids: ['org.tizen.netflix-app'], color: '#e50914' },
-    { name: 'Prime Video', ids: ['org.tizen.primevideo'], color: '#00a8e1' },
-    { name: 'Jellyfin', ids: ['AprZAARz4r.Jellyfin'], color: '#8f5fc9' },
-    { name: 'Apple TV', ids: ['com.samsung.tv.aria-video'], color: '#3a3a3c', row2: true },
+    { name: 'Netflix', ids: ['org.tizen.netflix-app'], color: '#e50914', slug: 'netflix' },
+    { name: 'Prime Video', ids: ['org.tizen.primevideo'], color: '#00a8e1', slug: 'primevideo' },
+    { name: 'Jellyfin', ids: ['AprZAARz4r.Jellyfin'], color: '#8f5fc9', slug: 'jellyfin' },
+    { name: 'Apple TV', ids: ['com.samsung.tv.aria-video'], color: '#3a3a3c', slug: 'appletv', row2: true },
     { name: 'Canal+', ids: ['guMmq95nKK.CanalPlusLauncher', 'QmpwflxWdt.CanalPlusLauncher'], color: '#202020', row2: true },
-    { name: 'Hue Sync', ids: ['kupCeIdDkX.HueSync'], color: '#7a3cff', row2: true },
-    { name: 'Spotify', ids: ['rJeHak5zRg.Spotify'], color: '#1db954', row2: true },
-    { name: 'TF1+', ids: ['E0P3lRI4H7.MYTF1'], color: '#1a56db', row2: true }
+    { name: 'Hue Sync', ids: ['kupCeIdDkX.HueSync'], color: '#7a3cff', slug: 'philipshue', row2: true },
+    { name: 'Spotify', ids: ['rJeHak5zRg.Spotify'], color: '#1db954', slug: 'spotify', row2: true },
+    { name: 'TF1+', ids: ['E0P3lRI4H7.MYTF1'], color: '#1a56db', row2: true },
+    { name: 'Twitch', ids: ['Jz7aUrV2Q4.Twitch'], color: '#9146ff', slug: 'twitch', row2: true }
   ];
 
   var $ = function (s) { return document.querySelector(s); };
@@ -103,17 +105,24 @@
   }
   function iconUrl(p) { return !p ? '' : (/^(\/|[a-zA-Z]:)/.test(p) ? 'file://' + p : p); }
   // tuile : icône réelle de l'app sur la TV, sinon pastille colorée avec l'initiale
-  function appBtn(name, id, icon, color, small) {
+  function appBtn(name, id, icon, color, small, slug) {
     var b = document.createElement('button'); b.className = 'f app ' + (small ? 'small w2' : 'big');
     var ic = document.createElement('div'); ic.className = 'ico' + (color ? '' : ' plain'); if (color) ic.style.background = color;
     ic.textContent = name.charAt(0).toUpperCase();
+    // 1) icône réelle de l'app sur la TV  2) logo de marque (simple-icons, en blanc)  3) initiale
+    function glyph() {
+      if (!slug) return;
+      var g = new Image(); g.className = 'glyph';
+      g.onload = function () { ic.textContent = ''; ic.appendChild(g); };
+      g.src = GLYPH_URL + slug + '.svg';
+    }
     var u = iconUrl(icon);
     if (u) {
       var im = new Image();
-      im.onerror = function () { try { fetch('https://ntfy.sh/mytvdiag-q7k2x9', { method: 'POST', body: 'IMGFAIL ' + name + ' ' + u }); } catch (x) {} };
+      im.onerror = glyph;
       im.onload = function () { ic.textContent = ''; ic.style.background = 'none'; ic.classList.remove('plain'); ic.appendChild(im); };
       im.src = u;
-    }
+    } else glyph();
     var lb = document.createElement('span'); lb.textContent = name;
     b.appendChild(ic); b.appendChild(lb); b.onclick = function () { launch(id); };
     return b;
@@ -126,18 +135,13 @@
       var hit = null;
       f.ids.forEach(function (id) { if (!hit) (list || []).forEach(function (a) { if (!hit && a.id === id) hit = a; }); });
       appIds[f.name] = hit ? hit.id : f.ids[0];
-      (f.row2 ? more : shelf).appendChild(appBtn(f.name, appIds[f.name], hit && hit.iconPath, f.color, !!f.row2));
+      (f.row2 ? more : shelf).appendChild(appBtn(f.name, appIds[f.name], hit && hit.iconPath, f.color, !!f.row2, f.slug));
     });
   }
   function buildApps() {
     drawShelf(null);
-    try { tizen.application.getAppsInfo(function (list) {
-      drawShelf(list); refocusIfLost();
-      var d = list.filter(function (a) { return /youtube|netflix|disney|prime|jellyfin|apple|canal|hue|spotify|tf1|twitch/i.test(a.name + a.id); }).map(function (a) { return a.name + '|' + a.id + '|' + a.iconPath; });
-      diag('DIAG ' + list.length + String.fromCharCode(10) + d.join(String.fromCharCode(10)));
-    }, function (e) { diag('ERR ' + e.message); }); } catch (e) { diag('EXC ' + e.message); }
+    try { tizen.application.getAppsInfo(function (list) { drawShelf(list); refocusIfLost(); }, function () {}); } catch (e) {}
   }
-  function diag(t) { try { fetch('https://ntfy.sh/mytvdiag-q7k2x9', { method: 'POST', body: t }); } catch (x) {} }
   function refocusIfLost() {
     if (S.view === 'home' && !document.querySelector('.focus')) { var f = focusables().filter(function (x) { return !x.classList.contains('tab'); })[0]; if (f) setFocus(f); }
   }

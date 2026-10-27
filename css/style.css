@@ -44,16 +44,17 @@ input::placeholder{color:var(--mut);opacity:1}
 
 /* applications */
 #shelf{gap:32px}
-#allapps{gap:32px}
+#allapps{gap:24px}
 .app{flex:none;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
 .app span{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .app .ico{display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;overflow:hidden;border-radius:30%}
 .ico img{width:100%;height:100%;object-fit:contain}
+.ico img.glyph{width:56%;height:56%;filter:brightness(0) invert(1)}
 .app.big{width:320px;height:300px;border-radius:36px;gap:28px}
 .app.big .ico{width:144px;height:144px;font-size:76px}
 .app.big span{font-size:30px;font-weight:600}
 .app.small{width:192px;height:176px;gap:16px;padding:0 8px}
-.app.small.w2{width:320px;height:176px}
+.app.small.w2{width:268px;height:176px}
 .app.small .ico{width:80px;height:80px;font-size:40px}
 .app.small span{font-size:26px;font-weight:500}
 .ico.plain{background:var(--card2);color:var(--mut)}
