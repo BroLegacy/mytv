@@ -1,16 +1,18 @@
 (function () {
   'use strict';
-  var VERSION = '1.0.5';
+  var VERSION = '1.0.6';
   var UPDATE_URL = 'https://brolegacy.github.io/mytv/version.json'; // TizenBrew met aussi l'app à jour tout seul
   var DEFAULT_M3U = 'https://iptv-org.github.io/iptv/countries/fr.m3u';
   var THEMES = ['aurora', 'sunset', 'forest', 'mono'];
   var GLOW_MODES = ['video', 'pulse', 'rainbow', 'off'];
   var GLOW_LABEL = { video: 'Halo : suit la vidéo', pulse: 'Halo : pulsation', rainbow: 'Halo : arc-en-ciel', off: 'Halo : éteint' };
+  // re : nom de l'app sur la TV (retrouvée automatiquement, avec son icône) ; id : identifiant de secours
   var FAV_APPS = [
-    { name: 'Netflix', id: '11101200001' },
-    { name: 'YouTube', id: '111299001912' },
-    { name: 'Disney+', id: '3201901017640' },
-    { name: 'Prime Video', id: '3201512006785' }
+    { name: 'YouTube', re: 'youtube', id: '111299001912', color: '#e62117' },
+    { name: 'Disney+', re: 'disney', id: '3201901017640', color: '#113ccf' },
+    { name: 'Netflix', re: 'netflix', id: '11101200001', color: '#e50914' },
+    { name: 'Prime Video', re: 'prime|amazon', id: '3201512006785', color: '#00a8e1' },
+    { name: 'Jellyfin', re: 'jellyfin', id: 'AprZAARz4r.Jellyfin', color: '#8f5fc9' }
   ];
 
   var $ = function (s) { return document.querySelector(s); };
@@ -69,23 +71,54 @@
   }, 120);
 
   /* ---------- apps ---------- */
-  function toast(t) { var o = $('#osd'); o.textContent = t; setTimeout(function () { o.textContent = ''; }, 3000); }
+  var toastT;
+  function toast(t) {
+    var o = $('#toast');
+    if (!o) { o = document.createElement('div'); o.id = 'toast'; document.body.appendChild(o); }
+    o.textContent = t; o.hidden = false;
+    clearTimeout(toastT); toastT = setTimeout(function () { o.hidden = true; }, 3500);
+  }
   function launch(id) {
-    try { tizen.application.launch(id, function () {}, function (e) { toast('Échec : ' + e.message); }); }
+    try { tizen.application.launch(id, function () {}, function (e) { toast('Échec du lancement : ' + e.message); }); }
     catch (e) { toast('Lancement possible seulement sur la TV'); }
   }
-  function appBtn(name, id) {
-    var b = document.createElement('button'); b.className = 'f app'; b.textContent = name; b.onclick = function () { launch(id); }; return b;
+  function iconUrl(p) { return !p ? '' : (/^(\/|[a-zA-Z]:)/.test(p) ? 'file://' + p : p); }
+  // tuile : icône réelle de l'app sur la TV, sinon pastille colorée avec l'initiale
+  function appBtn(name, id, icon, color) {
+    var b = document.createElement('button'); b.className = 'f app';
+    var ic = document.createElement('div'); ic.className = 'ico'; ic.style.background = color || 'var(--acc)';
+    ic.textContent = name.charAt(0).toUpperCase();
+    var u = iconUrl(icon);
+    if (u) {
+      var im = new Image();
+      im.onload = function () { ic.textContent = ''; ic.style.background = 'none'; ic.appendChild(im); };
+      im.src = u;
+    }
+    var lb = document.createElement('span'); lb.textContent = name;
+    b.appendChild(ic); b.appendChild(lb); b.onclick = function () { launch(id); };
+    return b;
+  }
+  function drawShelf(list) {
+    var shelf = $('#shelf'); shelf.innerHTML = '';
+    FAV_APPS.forEach(function (f) {
+      var re = new RegExp(f.re, 'i'), hit = null;
+      (list || []).forEach(function (a) { if (!hit && (a.id === f.id || re.test(a.name))) hit = a; });
+      shelf.appendChild(appBtn(f.name, hit ? hit.id : f.id, hit && hit.iconPath, f.color));
+    });
   }
   function buildApps() {
-    var shelf = $('#shelf'); shelf.innerHTML = '';
-    store.get('shelf', FAV_APPS).forEach(function (a) { shelf.appendChild(appBtn(a.name, a.id)); });
+    drawShelf(null);
     try {
       tizen.application.getAppsInfo(function (list) {
+        drawShelf(list);
         var box = $('#allapps'); box.innerHTML = '';
-        list.sort(function (a, b) { return a.name.localeCompare(b.name); }).forEach(function (a) { box.appendChild(appBtn(a.name, a.id)); });
-      });
+        list.sort(function (a, b) { return a.name.localeCompare(b.name); }).forEach(function (a) { box.appendChild(appBtn(a.name, a.id, a.iconPath)); });
+        refocusIfLost();
+      }, function () { $('#allapps').textContent = '(liste indisponible)'; });
     } catch (e) { $('#allapps').textContent = '(liste disponible sur la TV)'; }
+  }
+  function refocusIfLost() {
+    if (S.view === 'home' && !document.querySelector('.focus')) { var f = focusables().filter(function (x) { return !x.classList.contains('tab'); })[0]; if (f) setFocus(f); }
   }
 
   /* ---------- IPTV ---------- */
