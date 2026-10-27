@@ -65,9 +65,15 @@
   function local() { var s = document.createElement('script'); s.src = 'js/app.js'; document.body.appendChild(s); }
   if (typeof fetch !== 'function' || typeof Promise === 'undefined') return local();
   get('css/style.css').then(function (c) { addCss(c); ls('css', c); }).catch(function () { var c = ls('css'); if (c) addCss(c); });
-  get('js/app.js').then(function (j) { new Function(j); runJs(j); ls('js', j); }).catch(function () {
-    var j = ls('js');
-    if (j) { try { runJs(j); return; } catch (e) { ls('js', ''); } }
+  function tag(t) {
+    var d = document.getElementById('bootTag');
+    if (!d) { d = document.createElement('div'); d.id = 'bootTag'; d.style.cssText = 'position:fixed;right:12px;bottom:6px;z-index:99;font:18px sans-serif;color:#fff8;pointer-events:none'; document.body.appendChild(d); }
+    d.textContent = 'v' + (window.MYTV_VERSION || '?') + ' · ' + t;
+  }
+  get('js/app.js').then(function (j) { new Function(j); runJs(j); ls('js', j); tag('en ligne'); }).catch(function (err) {
+    var j = ls('js'), why = String(err && err.message || err);
+    if (j) { try { runJs(j); tag('cache (' + why + ')'); return; } catch (e) { ls('js', ''); } }
+    tag('embarqué (' + why + ')');
     local();
   });
 })();
