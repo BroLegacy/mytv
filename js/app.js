@@ -1,6 +1,6 @@
 (function () {
   'use strict';
-  var VERSION = '1.5.0'; window.MYTV_VERSION = VERSION;
+  var VERSION = '1.5.1'; window.MYTV_VERSION = VERSION;
   var UPDATE_URL = 'https://brolegacy.github.io/mytv/version.json'; // TizenBrew met aussi l'app à jour tout seul
   var DEFAULT_M3U = 'https://iptv-org.github.io/iptv/countries/fr.m3u';
   var THEMES = ['aurora', 'sunset', 'forest', 'mono'];
@@ -12,7 +12,7 @@
   // re : nom de l'app sur la TV (retrouvée automatiquement, avec son icône) ; id : identifiant de secours
   var GLYPH_URL = 'https://cdn.jsdelivr.net/npm/simple-icons@11.14.0/icons/';
   var FAV_APPS = [
-    { name: 'YouTube', ids: ['9Ur5IzDKqV.TizenYouTube', 'com.samsung.tv.cobalt-yt'], color: '#e62117', slug: 'youtube' },
+    { name: 'YouTube', ids: ['9Ur5IzDKqV.TizenYouTube', 'com.samsung.tv.cobalt-yt'], color: '#e62117', slug: 'youtube', glyph: true },
     { name: 'Disney+', ids: ['MCmYXNxgcu.DisneyPlus'], color: '#113ccf' },
     { name: 'Netflix', ids: ['org.tizen.netflix-app'], color: '#e50914', slug: 'netflix' },
     { name: 'Prime Video', ids: ['org.tizen.primevideo'], color: '#00a8e1', slug: 'primevideo' },
@@ -135,7 +135,7 @@
       var hit = null;
       f.ids.forEach(function (id) { if (!hit) (list || []).forEach(function (a) { if (!hit && a.id === id) hit = a; }); });
       appIds[f.name] = hit ? hit.id : f.ids[0];
-      (f.row2 ? more : shelf).appendChild(appBtn(f.name, appIds[f.name], hit && hit.iconPath, f.color, !!f.row2, f.slug));
+      (f.row2 ? more : shelf).appendChild(appBtn(f.name, appIds[f.name], !f.glyph && hit && hit.iconPath, f.color, !!f.row2, f.slug));
     });
   }
   function buildApps() {
