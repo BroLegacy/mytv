@@ -50,6 +50,27 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.17/dist/hls.min.js"></script>
-<script src="js/app.js"></script>
+<script>
+/* Chargeur : prend css/js en ligne (GitHub Pages) -> sinon dernière copie en cache -> sinon fichiers embarqués */
+(function () {
+  var BASE = 'https://brolegacy.github.io/mytv/';
+  function ls(k, v) { try { if (v === undefined) return localStorage.getItem('mytv.boot.' + k); localStorage.setItem('mytv.boot.' + k, v); } catch (e) {} }
+  function get(file) {
+    var url = BASE + file + '?t=' + Math.floor(new Date().getTime() / 60000);
+    var t = new Promise(function (_, rej) { setTimeout(function () { rej(new Error('timeout')); }, 5000); });
+    return Promise.race([fetch(url, { cache: 'no-store' }).then(function (r) { if (!r.ok) throw new Error(r.status); return r.text(); }), t]);
+  }
+  function addCss(txt) { var s = document.createElement('style'); s.textContent = txt; document.head.appendChild(s); }
+  function runJs(txt) { new Function(txt); var s = document.createElement('script'); s.textContent = txt; document.body.appendChild(s); }
+  function local() { var s = document.createElement('script'); s.src = 'js/app.js'; document.body.appendChild(s); }
+  if (typeof fetch !== 'function' || typeof Promise === 'undefined') return local();
+  get('css/style.css').then(function (c) { addCss(c); ls('css', c); }).catch(function () { var c = ls('css'); if (c) addCss(c); });
+  get('js/app.js').then(function (j) { new Function(j); runJs(j); ls('js', j); }).catch(function () {
+    var j = ls('js');
+    if (j) { try { runJs(j); return; } catch (e) { ls('js', ''); } }
+    local();
+  });
+})();
+</script>
 </body>
 </html>
