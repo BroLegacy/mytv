@@ -1,6 +1,6 @@
 (function () {
   'use strict';
-  var VERSION = '1.2.0'; window.MYTV_VERSION = VERSION;
+  var VERSION = '1.2.1'; window.MYTV_VERSION = VERSION;
   var UPDATE_URL = 'https://brolegacy.github.io/mytv/version.json'; // TizenBrew met aussi l'app à jour tout seul
   var DEFAULT_M3U = 'https://iptv-org.github.io/iptv/countries/fr.m3u';
   var THEMES = ['aurora', 'sunset', 'forest', 'mono'];
@@ -152,6 +152,8 @@
     $('#channels').textContent = 'Chargement…';
     fetch(S.m3u).then(function (r) { return r.text(); }).then(function (t) {
       S.channels = parseM3U(t); renderChannels(); if (cb) cb();
+      var cur = $('.focus'), first = document.querySelector('#channels .ch');
+      if (S.view === 'tv' && first && (!cur || cur.id === 'search') && document.activeElement !== $('#search')) setFocus(first);
     }).catch(function () { $('#channels').textContent = 'Playlist inaccessible'; });
   }
   function renderChannels() {
@@ -211,8 +213,7 @@
     if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
     if (!el) return;
     el.classList.add('focus');
-    if (el.tagName === 'INPUT') el.focus();
-    el.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+        el.scrollIntoView({ block: 'nearest', inline: 'nearest' });
   }
   function move(dir) {
     var cur = $('.focus'), all = focusables(); if (!cur) return setFocus(all[0]);
@@ -233,8 +234,8 @@
     if (!$('#player').hidden) { if (k === 10009 || k === 8) { stop(); return true; } return false; }
     if (k === 37) { if (!inp) move('l'); } else if (k === 39) { if (!inp) move('r'); }
     else if (k === 38) move('u'); else if (k === 40) move('d');
-    else if (k === 13) { var c = $('.focus'); if (c && c.tagName !== 'INPUT') c.click(); }
-    else if (k === 10009) { if (S.view !== 'home') show('home'); }
+    else if (k === 13) { var c = $('.focus'); if (c && c.tagName === 'INPUT') c.focus(); else if (c) c.click(); }
+    else if (k === 10009) { if (inp) document.activeElement.blur(); else if (S.view !== 'home') show('home'); }
     else return false;
     return true;
   }
@@ -247,7 +248,10 @@
     [].forEach.call(document.querySelectorAll('.tab'), function (t) { t.classList.toggle('active', t.dataset.view === v); });
     if (v === 'tv' && !S.channels.length) loadM3U();
     setFocus(null);
-    setTimeout(function () { var f = focusables(); setFocus(f.filter(function (x) { return !x.classList.contains('tab'); })[0] || f[0]); }, 50);
+    setTimeout(function () {
+      var f = focusables(), ch = v === 'tv' && document.querySelector('#channels .ch');
+      setFocus(ch || f.filter(function (x) { return !x.classList.contains('tab'); })[0] || f[0]);
+    }, 50);
   }
 
   /* ---------- télécommande téléphone (relais ntfy.sh) ---------- */
