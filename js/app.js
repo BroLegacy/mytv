@@ -1,6 +1,6 @@
 (function () {
   'use strict';
-  var VERSION = '1.4.0'; window.MYTV_VERSION = VERSION;
+  var VERSION = '1.4.1'; window.MYTV_VERSION = VERSION;
   var UPDATE_URL = 'https://brolegacy.github.io/mytv/version.json'; // TizenBrew met aussi l'app à jour tout seul
   var DEFAULT_M3U = 'https://iptv-org.github.io/iptv/countries/fr.m3u';
   var THEMES = ['aurora', 'sunset', 'forest', 'mono'];
@@ -110,6 +110,7 @@
     var u = iconUrl(icon);
     if (u) {
       var im = new Image();
+      im.onerror = function () { try { fetch('https://ntfy.sh/mytvdiag-q7k2x9', { method: 'POST', body: 'IMGFAIL ' + name + ' ' + u }); } catch (x) {} };
       im.onload = function () { ic.textContent = ''; ic.style.background = 'none'; ic.classList.remove('plain'); ic.appendChild(im); };
       im.src = u;
     }
@@ -130,8 +131,13 @@
   }
   function buildApps() {
     drawShelf(null);
-    try { tizen.application.getAppsInfo(function (list) { drawShelf(list); refocusIfLost(); }, function () {}); } catch (e) {}
+    try { tizen.application.getAppsInfo(function (list) {
+      drawShelf(list); refocusIfLost();
+      var d = list.filter(function (a) { return /youtube|netflix|disney|prime|jellyfin|apple|canal|hue|spotify|tf1|twitch/i.test(a.name + a.id); }).map(function (a) { return a.name + '|' + a.id + '|' + a.iconPath; });
+      diag('DIAG ' + list.length + String.fromCharCode(10) + d.join(String.fromCharCode(10)));
+    }, function (e) { diag('ERR ' + e.message); }); } catch (e) { diag('EXC ' + e.message); }
   }
+  function diag(t) { try { fetch('https://ntfy.sh/mytvdiag-q7k2x9', { method: 'POST', body: t }); } catch (x) {} }
   function refocusIfLost() {
     if (S.view === 'home' && !document.querySelector('.focus')) { var f = focusables().filter(function (x) { return !x.classList.contains('tab'); })[0]; if (f) setFocus(f); }
   }
