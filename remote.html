@@ -6,59 +6,63 @@
 <meta name="theme-color" content="#0b0d17">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>MyTV Télécommande</title>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 :root { --bg:#0b0d17; --fg:#f2f4ff; --card:#1a1e33; --card2:#262b47; --mut:#a4a9c4; --acc:#7c5cff; --on:#ffffff; }
 * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; -webkit-user-select:none; user-select:none; -webkit-touch-callout:none; }
-html, body { margin:0; height:100%; background:var(--bg); color:var(--fg); font:17px/1.25 'Space Grotesk', system-ui, sans-serif; transition:background .4s; overscroll-behavior:none; }
-#app { max-width:480px; height:100%; margin:0 auto; display:flex; flex-direction:column; padding-top:env(safe-area-inset-top); }
-header { flex:none; display:flex; align-items:center; justify-content:space-between; padding:18px 20px 6px; }
+html, body { margin:0; height:100%; overflow:hidden; background:var(--bg); color:var(--fg); font:16px/1.2 'Space Grotesk', system-ui, sans-serif; transition:background .4s; overscroll-behavior:none; touch-action:manipulation; }
+#app { max-width:480px; height:100vh; height:100dvh; margin:0 auto; display:flex; flex-direction:column; padding-top:env(safe-area-inset-top); overflow:hidden; }
+header { flex:none; display:flex; align-items:center; justify-content:space-between; padding:12px 18px 4px; }
 header h1 { margin:0; font-size:22px; font-weight:600; letter-spacing:-.01em; }
-#chip { display:flex; align-items:center; gap:8px; font-size:14px; color:var(--mut); background:var(--card); padding:7px 12px; border-radius:20px; }
+#chip { display:flex; align-items:center; gap:8px; font-size:13px; color:var(--mut); background:var(--card); padding:6px 12px; border-radius:20px; }
 #chip i { width:9px; height:9px; border-radius:50%; background:#777; }
 #chip.on i { background:#3ddc84; box-shadow:0 0 8px #3ddc84; } #chip.on { color:var(--fg); }
-main { flex:1; min-height:0; overflow-y:auto; padding:8px 20px 20px; }
-.page { display:none; } .page.show { display:block; }
-h2 { font-size:14px; font-weight:400; color:var(--mut); margin:22px 0 10px; }
-button { border:0; font:inherit; color:inherit; background:var(--card); border-radius:20px; transition:transform .1s, filter .1s, background .15s; touch-action:manipulation; }
-button:active, .down { transform:scale(.95); filter:brightness(1.3); }
-.apps { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; }
-.app { aspect-ratio:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; font-size:15px; font-weight:600; padding:0; }
-.app b { width:56px; height:56px; border-radius:30%; display:flex; align-items:center; justify-content:center; font-size:30px; color:#fff; }
+main { flex:1; min-height:0; overflow:hidden; padding:8px 18px 4px; }
+.page { display:none; height:100%; } .page.show { display:flex; flex-direction:column; gap:12px; }
+button { border:0; font:inherit; color:inherit; background:var(--card); border-radius:18px; transition:transform .1s, filter .1s, background .15s; touch-action:manipulation; padding:0; }
+button:active, .down { transform:scale(.94); filter:brightness(1.3); }
+.apps { flex:none; display:grid; grid-template-columns:repeat(5,1fr); gap:8px; }
+.app { height:clamp(74px, 11.5dvh, 92px); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; font-size:11px; font-weight:600; border-radius:16px; min-width:0; }
+.app b { width:40px; height:40px; border-radius:30%; display:flex; align-items:center; justify-content:center; font-size:22px; color:#fff; }
+.app span { max-width:100%; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .app.sent { background:var(--acc); color:var(--on); }
-.dpad { position:relative; width:260px; height:260px; margin:6px auto 0; border-radius:50%; background:var(--card); }
-.dpad button { position:absolute; width:86px; height:86px; background:transparent; border-radius:50%; font-size:26px; color:var(--mut); display:flex; align-items:center; justify-content:center; padding:0; }
-.dpad .u { left:87px; top:6px; } .dpad .d { left:87px; bottom:6px; } .dpad .l { left:6px; top:87px; } .dpad .r { right:6px; top:87px; }
-.dpad .ok { left:77px; top:77px; width:106px; height:106px; background:var(--acc); color:var(--on); font-weight:700; font-size:20px; }
-.row3 { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-top:18px; }
-.row3 button { height:56px; font-weight:500; font-size:16px; }
-input { width:100%; height:52px; border-radius:26px; border:2px solid transparent; background:var(--card); color:var(--fg); padding:0 22px; font:inherit; -webkit-user-select:text; user-select:text; outline:none; }
+.padwrap { flex:1; min-height:0; display:flex; align-items:center; justify-content:center; }
+.dpad { position:relative; width:min(270px, 100%, 36dvh); aspect-ratio:1; border-radius:50%; background:var(--card); }
+.dpad button { position:absolute; width:33%; height:33%; background:transparent; border-radius:50%; font-size:24px; color:var(--mut); display:flex; align-items:center; justify-content:center; }
+.dpad .u { left:33.5%; top:2%; } .dpad .d { left:33.5%; bottom:2%; } .dpad .l { left:2%; top:33.5%; } .dpad .r { right:2%; top:33.5%; }
+.dpad .ok { left:29%; top:29%; width:42%; height:42%; background:var(--acc); color:var(--on); font-weight:700; font-size:20px; }
+.row5 { flex:none; display:grid; grid-template-columns:repeat(5,1fr); gap:8px; }
+.row5 button { height:52px; font-weight:500; font-size:14px; border-radius:16px; }
+input { width:100%; height:48px; border-radius:24px; border:2px solid transparent; background:var(--card); color:var(--fg); padding:0 20px; font:inherit; font-size:16px; -webkit-user-select:text; user-select:text; outline:none; }
 input:focus { border-color:var(--acc); }
-.sticky { position:sticky; top:-8px; z-index:2; background:var(--bg); padding:8px 0 10px; }
-.count { font-size:14px; color:var(--mut); margin:8px 4px 0; }
-#chs { display:flex; flex-direction:column; gap:8px; }
-.ch { height:60px; padding:0 14px; display:flex; align-items:center; gap:14px; text-align:left; border-radius:18px; }
-.ch u { flex:none; width:40px; height:40px; border-radius:12px; background:var(--card2); color:var(--mut); display:flex; align-items:center; justify-content:center; font:12px 'Space Grotesk',monospace; text-decoration:none; }
+.count { flex:none; font-size:13px; color:var(--mut); margin:-4px 4px 0; }
+#chs { flex:1; min-height:0; overflow:hidden; display:flex; flex-direction:column; gap:8px; }
+.ch { flex:none; height:54px; padding:0 12px; display:flex; align-items:center; gap:12px; text-align:left; border-radius:16px; }
+.ch u { flex:none; width:36px; height:36px; border-radius:11px; background:var(--card2); color:var(--mut); display:flex; align-items:center; justify-content:center; font-size:11px; text-decoration:none; }
 .ch span { min-width:0; flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-weight:500; }
-.card { background:var(--card); border-radius:24px; padding:18px; margin-bottom:12px; }
-.card h3 { margin:0 0 12px; font-size:14px; font-weight:400; color:var(--mut); }
-.themes { display:grid; grid-template-columns:repeat(2,1fr); gap:10px; }
-.theme { height:84px; background:var(--card2); border:2px solid transparent; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:7px; font-size:15px; font-weight:500; }
+.card { background:var(--card); border-radius:22px; padding:14px; }
+.card h3 { margin:0 0 10px; font-size:13px; font-weight:400; color:var(--mut); }
+.themes { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; }
+.theme { height:76px; background:var(--card2); border:2px solid transparent; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; font-size:12px; font-weight:500; border-radius:16px; }
 .theme.sel { border-color:var(--acc); }
-.tp { position:relative; width:62px; height:34px; border-radius:9px; border:2px solid; }
-.tp b { position:absolute; left:6px; top:6px; width:28px; height:7px; border-radius:4px; } .tp u { position:absolute; right:6px; bottom:5px; width:12px; height:12px; border-radius:50%; }
-.seg { display:flex; gap:6px; background:var(--card2); border-radius:22px; padding:5px; margin-bottom:10px; }
-.seg button { flex:1; height:42px; background:transparent; border-radius:17px; font-size:15px; color:var(--mut); padding:0 4px; }
+.tp { position:relative; width:46px; height:28px; border-radius:8px; border:2px solid; }
+.tp b { position:absolute; left:5px; top:5px; width:20px; height:6px; border-radius:3px; } .tp u { position:absolute; right:5px; bottom:4px; width:10px; height:10px; border-radius:50%; }
+.seg { display:flex; gap:4px; background:var(--card2); border-radius:20px; padding:4px; }
+.seg + .seg { margin-top:8px; }
+.seg button { flex:1; height:40px; background:transparent; border-radius:16px; font-size:14px; color:var(--mut); }
 .seg button.sel { background:var(--acc); color:var(--on); }
-.wide { width:100%; height:52px; background:var(--card2); font-weight:500; margin-top:2px; }
-.wide.danger { color:var(--mut); font-size:15px; background:transparent; }
-nav { flex:none; padding:8px 16px calc(14px + env(safe-area-inset-bottom)); }
-nav div { display:flex; gap:6px; padding:6px; border-radius:32px; background:var(--card); }
-nav button { flex:1; height:50px; border-radius:26px; background:transparent; color:var(--mut); font-weight:500; }
+.two { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+.two button { height:50px; background:var(--card2); font-weight:500; font-size:14px; }
+.count2 { font-size:12px; color:var(--mut); margin-top:10px; text-align:center; }
+nav { flex:none; padding:6px 14px calc(10px + env(safe-area-inset-bottom)); }
+nav div { display:flex; gap:6px; padding:5px; border-radius:30px; background:var(--card); }
+nav button { flex:1; height:46px; border-radius:24px; background:transparent; color:var(--mut); font-weight:500; }
 nav button.sel { background:var(--acc); color:var(--on); }
 #setup { display:none; margin:40px 20px; background:var(--card); border-radius:24px; padding:22px; line-height:1.4; }
-#toast { position:fixed; left:50%; bottom:90px; transform:translateX(-50%); background:#000d; color:#fff; padding:10px 18px; border-radius:16px; font-size:15px; opacity:0; transition:opacity .2s; pointer-events:none; white-space:nowrap; max-width:90vw; overflow:hidden; text-overflow:ellipsis; }
+#toast { position:fixed; left:50%; bottom:100px; transform:translateX(-50%); background:#000d; color:#fff; padding:10px 18px; border-radius:16px; font-size:15px; opacity:0; transition:opacity .2s; pointer-events:none; white-space:nowrap; max-width:90vw; overflow:hidden; text-overflow:ellipsis; }
+@media (max-height:700px) { .dpad { width:min(220px, 100%, 34dvh); } .app { height:70px; } }
 </style>
 </head>
 <body>
@@ -67,26 +71,30 @@ nav button.sel { background:var(--acc); color:var(--on); }
   <div id="setup">Aucune TV liée. Sur la TV, ouvre <b>Réglages → Télécommande téléphone</b> puis scanne le QR code avec ton téléphone.</div>
   <main id="main">
     <section class="page show" id="p-pad">
-      <h2>Applications</h2><div class="apps" id="apps"></div>
-      <h2>Navigation</h2>
-      <div class="dpad">
-        <button class="u" data-k="up" data-rep>▲</button><button class="l" data-k="left" data-rep>◀</button>
-        <button class="ok" data-k="ok">OK</button>
-        <button class="r" data-k="right" data-rep>▶</button><button class="d" data-k="down" data-rep>▼</button>
+      <div class="apps" id="apps"></div>
+      <div class="padwrap">
+        <div class="dpad">
+          <button class="u" data-k="up" data-rep aria-label="Haut">▲</button><button class="l" data-k="left" data-rep aria-label="Gauche">◀</button>
+          <button class="ok" data-k="ok">OK</button>
+          <button class="r" data-k="right" data-rep aria-label="Droite">▶</button><button class="d" data-k="down" data-rep aria-label="Bas">▼</button>
+        </div>
       </div>
-      <div class="row3"><button data-k="back">⮌ Retour</button><button data-c="home">⌂ Accueil</button><button data-c="stop">■ Stop</button></div>
+      <div class="row5">
+        <button data-k="back" aria-label="Retour">⮌</button><button data-c="home" aria-label="Accueil">⌂</button><button data-c="stop" aria-label="Stop">■</button>
+        <button data-c="ch:prev" data-rep2>CH −</button><button data-c="ch:next" data-rep2>CH +</button>
+      </div>
     </section>
     <section class="page" id="p-tv">
-      <div class="sticky"><input id="q" placeholder="Rechercher une chaîne…" autocomplete="off" enterkeyhint="search"><div class="count" id="count"></div></div>
+      <input id="q" placeholder="Rechercher une chaîne…" autocomplete="off" enterkeyhint="search">
+      <div class="count" id="count"></div>
       <div id="chs"></div>
     </section>
     <section class="page" id="p-set">
       <div class="card"><h3>Thème</h3><div class="themes" id="themes"></div></div>
       <div class="card"><h3>Halo lumineux</h3><div class="seg" id="glows"></div><div class="seg" id="intens"></div></div>
       <div class="card"><h3>Application</h3>
-        <button class="wide" data-c="reload">Mettre à jour la TV</button>
-        <button class="wide danger" id="unlink">Changer de TV</button>
-        <div class="count" id="ver"></div></div>
+        <div class="two"><button data-c="reload">Mettre à jour la TV</button><button id="unlink">Changer de TV</button></div>
+        <div class="count2" id="ver"></div></div>
     </section>
   </main>
   <nav><div id="tabs"><button class="sel" data-p="p-pad">Manette</button><button data-p="p-tv">Chaînes</button><button data-p="p-set">Réglages</button></div></nav>
@@ -96,7 +104,10 @@ nav button.sel { background:var(--acc); color:var(--on); }
 <script>
 (function () {
   var BASE = 'https://ntfy.sh/', M3U = 'https://iptv-org.github.io/iptv/countries/fr.m3u';
-  var APPS = [['YouTube','#e62117'],['Netflix','#e50914'],['Disney+','#113ccf'],['Prime Video','#00a8e1'],['Jellyfin','#8f5fc9']];
+  // [nom envoyé à la TV, libellé court, couleur]
+  var APPS = [['YouTube','YouTube','#e62117'],['Disney+','Disney+','#113ccf'],['Netflix','Netflix','#e50914'],['Prime Video','Prime','#00a8e1'],['Jellyfin','Jellyfin','#8f5fc9'],
+              ['Apple TV','Apple TV','#3a3a3c'],['Canal+','Canal+','#2b2b2b'],['Hue Sync','Hue Sync','#7a3cff'],['Spotify','Spotify','#1db954'],['TF1+','TF1+','#1a56db']];
+  var PRIO = ['tf1','france 2','france 3','canal','france 5','m6','arte','c8','w9','tmc','tfx','nrj','lcp','france 4','bfm tv','cnews','cstar','gulli','franceinfo','equipe','6ter','rmc','cherie','lci'];
   var TH = { aurora:['#0b0d17','#1a1e33','#262b47','#7c5cff','#f2f4ff','#a4a9c4','#fff'], sunset:['#1a0d12','#2e1a22','#3d242d','#ff6a3d','#fff3ef','#c9a9b0','#1a0d12'],
              forest:['#09140f','#14281d','#1d3a29','#3ddc84','#effaf3','#9fc0ae','#09140f'], mono:['#0d0d0d','#202020','#2e2e2e','#ffffff','#f5f5f5','#a6a6a6','#0d0d0d'] };
   var GLOWS = [['video','Vidéo'],['pulse','Pulse'],['rainbow','Arc-en-ciel'],['off','Éteint']];
@@ -117,10 +128,10 @@ nav button.sel { background:var(--acc); color:var(--on); }
   var tt;
   function toast(t) { var o = $('#toast'); o.textContent = t; o.style.opacity = 1; clearTimeout(tt); tt = setTimeout(function () { o.style.opacity = 0; }, 1400); }
   function buzz(n) { if (navigator.vibrate) navigator.vibrate(n || 12); }
+  function post(msg) { return fetch(BASE + topic, { method: 'POST', body: msg }); }
   function send(msg, label) {
     buzz();
-    fetch(BASE + topic, { method: 'POST', body: msg }).then(function (r) { if (!r.ok) throw 0; if (label) toast(label); })
-      .catch(function () { toast('Pas de connexion'); });
+    post(msg).then(function (r) { if (!r.ok) throw 0; if (label) toast(label); }).catch(function () { toast('Pas de connexion'); });
   }
 
   if (!topic) { $('#setup').style.display = 'block'; $('#main').style.display = 'none'; $('nav').style.display = 'none'; $('#chip').style.display = 'none'; return; }
@@ -155,29 +166,34 @@ nav button.sel { background:var(--acc); color:var(--on); }
       buzz(8);
       [].forEach.call(document.querySelectorAll('#tabs button'), function (x) { x.classList.toggle('sel', x === b); });
       [].forEach.call(document.querySelectorAll('.page'), function (p) { p.classList.toggle('show', p.id === b.dataset.p); });
-      $('#main').scrollTop = 0; if (b.dataset.p === 'p-tv') loadChannels();
+      if (b.dataset.p === 'p-tv') { loadChannels(); render(); }
     };
   });
 
   /* ---- manette ---- */
   APPS.forEach(function (a) {
     var b = document.createElement('button'); b.className = 'app';
-    b.innerHTML = '<b style="background:' + a[1] + '">' + a[0].charAt(0) + '</b><span></span>'; b.lastChild.textContent = a[0];
+    b.innerHTML = '<b style="background:' + a[2] + '">' + a[0].charAt(0) + '</b><span></span>'; b.lastChild.textContent = a[1];
     b.onclick = function () { b.classList.add('sent'); setTimeout(function () { b.classList.remove('sent'); }, 600); send('app:' + a[0], 'Ouverture de ' + a[0] + '…'); };
     $('#apps').appendChild(b);
   });
-  [].forEach.call(document.querySelectorAll('[data-k]'), function (b) {
-    var k = b.dataset.k, iv, to;
-    function fire() { buzz(8); fetch(BASE + topic, { method: 'POST', body: 'key:' + k }).catch(function () { toast('Pas de connexion'); }); }
+  // appui + maintien = répétition (flèches, CH+/CH-)
+  function holdable(b, msg) {
+    var iv, to;
+    function fire() { buzz(8); post(msg).catch(function () { toast('Pas de connexion'); }); }
     function stop() { clearTimeout(to); clearInterval(iv); b.classList.remove('down'); }
     b.addEventListener('pointerdown', function (e) {
       e.preventDefault(); b.classList.add('down'); fire();
-      if (b.hasAttribute('data-rep')) to = setTimeout(function () { iv = setInterval(fire, 220); }, 450);
+      if (b.hasAttribute('data-rep') || b.hasAttribute('data-rep2')) to = setTimeout(function () { iv = setInterval(fire, 260); }, 450);
     });
     ['pointerup', 'pointerleave', 'pointercancel'].forEach(function (ev) { b.addEventListener(ev, stop); });
     b.addEventListener('contextmenu', function (e) { e.preventDefault(); });
+  }
+  [].forEach.call(document.querySelectorAll('[data-k]'), function (b) { holdable(b, 'key:' + b.dataset.k); });
+  [].forEach.call(document.querySelectorAll('[data-c]'), function (b) {
+    if (b.hasAttribute('data-rep2')) holdable(b, b.dataset.c);
+    else b.onclick = function () { send(b.dataset.c, b.dataset.c === 'reload' ? 'Mise à jour demandée' : ''); };
   });
-  [].forEach.call(document.querySelectorAll('[data-c]'), function (b) { b.onclick = function () { send(b.dataset.c, b.dataset.c === 'reload' ? 'Mise à jour demandée' : ''); }; });
 
   /* ---- réglages ---- */
   Object.keys(TH).forEach(function (t) {
@@ -191,7 +207,7 @@ nav button.sel { background:var(--acc); color:var(--on); }
   INTENS.forEach(function (g) { var b = document.createElement('button'); b.textContent = g[1]; b.dataset.v = g[0]; b.onclick = function () { tv.inten = g[0]; paint(); send('inten:' + g[0]); }; $('#intens').appendChild(b); });
   $('#unlink').onclick = function () { if (confirm('Délier ce téléphone de la TV ?')) { ST('topic', null); location.reload(); } };
 
-  /* ---- chaînes ---- */
+  /* ---- chaînes : la liste tient dans l'écran (pas de défilement), on affine avec la recherche ---- */
   var channels = null, loading = false;
   function parse(txt) {
     var out = [], name = null;
@@ -201,12 +217,15 @@ nav button.sel { background:var(--acc); color:var(--on); }
     });
     return out;
   }
+  function rank(n) { var l = n.toLowerCase(), i; for (i = 0; i < PRIO.length; i++) if (l.indexOf(PRIO[i]) === 0 || l.indexOf(PRIO[i]) >= 0 && i < 4) return i; return 999; }
   function render() {
     var q = $('#q').value.toLowerCase(), box = $('#chs'); box.innerHTML = '';
     if (!channels) return;
     var list = channels.filter(function (n) { return n.toLowerCase().indexOf(q) >= 0; });
-    $('#count').textContent = list.length ? list.length + ' chaîne' + (list.length > 1 ? 's' : '') : 'Aucune chaîne';
-    list.slice(0, 60).forEach(function (n) {
+    if (!q) list = list.map(function (n, i) { return [rank(n), i, n]; }).sort(function (a, b) { return a[0] - b[0] || a[1] - b[1]; }).map(function (x) { return x[2]; });
+    var fit = Math.max(3, Math.floor((box.clientHeight + 8) / 62));
+    $('#count').textContent = list.length ? (list.length > fit ? fit + ' sur ' + list.length + ' · affine avec la recherche' : list.length + ' chaîne' + (list.length > 1 ? 's' : '')) : 'Aucune chaîne';
+    list.slice(0, fit).forEach(function (n) {
       var b = document.createElement('button'); b.className = 'ch';
       b.innerHTML = '<u></u><span></span>'; b.firstChild.textContent = n.replace(/[^A-Za-z0-9+]/g, '').slice(0, 3).toUpperCase(); b.lastChild.textContent = n;
       b.onclick = function () { send('tv:' + n, 'Lecture : ' + n); }; box.appendChild(b);
@@ -218,6 +237,7 @@ nav button.sel { background:var(--acc); color:var(--on); }
       .catch(function () { $('#count').textContent = 'Playlist inaccessible'; }).then(function () { loading = false; });
   }
   $('#q').addEventListener('input', render);
+  window.addEventListener('resize', render);
   paint();
 })();
 </script>
