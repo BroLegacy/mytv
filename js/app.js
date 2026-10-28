@@ -592,7 +592,7 @@
     alertEl.hidden = false; beep();
     clearTimeout(alertT); alertT = setTimeout(dismissAlert, 12000);
     try { fetch(REMOTE_BASE + topic(), { method: 'POST', body: 'alert:' + JSON.stringify({ id: r.id, m: r.m }) }); } catch (e) {}
-    try { fetch(REMOTE_BASE + topic() + '-push', { method: 'POST', headers: { 'Title': 'MyTV', 'Priority': 'high' }, body: r.m }); } catch (e) {}
+    try { fetch('https://ntfy.sh/' + topic() + '-push', { method: 'POST', headers: { 'Title': 'MyTV', 'Priority': 'high' }, body: r.m }); } catch (e) {}
   }
   function alertShown() { return !!alertEl && !alertEl.hidden; }
   function dismissAlert() {
@@ -969,7 +969,8 @@
   }
 
   /* ---------- télécommande téléphone (relais ntfy.sh) ---------- */
-  var REMOTE_BASE = 'https://ntfy.sh/', REMOTE_PAGE = 'https://brolegacy.github.io/mytv/remote.html';
+  var RELAY = ''; // URL du relais perso (Cloudflare Worker, voir relay/) ; vide = ntfy.sh
+  var REMOTE_BASE = RELAY || 'https://ntfy.sh/', REMOTE_PAGE = 'https://brolegacy.github.io/mytv/remote.html';
   var QR_LIB = 'https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js';
   var KEYS = { up: 38, down: 40, left: 37, right: 39, ok: 13, back: 10009 };
   var remote = { es: null, lastId: '', box: null };
@@ -1071,6 +1072,24 @@
   function remoteStatus(t) { if (remote.st) remote.st.textContent = t; }
   function remoteConnect() {
     if (remote.es) { remote.es.close(); remote.es = null; }
+    var msgIn = function (j) {
+      remote.beat = Date.now();
+      try {
+        if (j.event && j.event !== 'message') return;
+        if (j.id && j.id === remote.lastId) return;
+        remote.lastId = j.id; remoteCmd(String(j.message || ''));
+      } catch (e) {}
+    };
+    if (RELAY) { // relais perso : WebSocket (ping texte toutes les 25 s, le relais répond pong)
+      if (!window.WebSocket) return remoteStatus('Télécommande indisponible sur cette TV');
+      var ws = new WebSocket(RELAY.replace(/^http/, 'ws') + topic() + '/ws?since=0'), pt;
+      remote.es = { close: function () { clearInterval(pt); ws.onclose = null; try { ws.close(); } catch (e) {} } };
+      remote.beat = Date.now();
+      ws.onopen = function () { remote.beat = Date.now(); remoteStatus('Télécommande connectée'); publishState(); pt = setInterval(function () { try { ws.send('ping'); } catch (e) {} }, 25000); };
+      ws.onclose = function () { clearInterval(pt); remoteStatus('Télécommande : reconnexion…'); if (remote.es && remote.es.close) setTimeout(remoteConnect, 3000); };
+      ws.onmessage = function (ev) { remote.beat = Date.now(); if (ev.data === 'pong') return; try { msgIn(JSON.parse(ev.data)); } catch (e) {} };
+      return;
+    }
     if (!window.EventSource) return remoteStatus('Télécommande indisponible sur cette TV');
     var es = remote.es = new EventSource(REMOTE_BASE + topic() + '/sse');
     remote.beat = Date.now();
