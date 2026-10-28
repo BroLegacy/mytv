@@ -1,6 +1,6 @@
 (function () {
   'use strict';
-  var VERSION = '1.5.1'; window.MYTV_VERSION = VERSION;
+  var VERSION = '1.5.2'; window.MYTV_VERSION = VERSION;
   var UPDATE_URL = 'https://brolegacy.github.io/mytv/version.json'; // TizenBrew met aussi l'app à jour tout seul
   var DEFAULT_M3U = 'https://iptv-org.github.io/iptv/countries/fr.m3u';
   var THEMES = ['aurora', 'sunset', 'forest', 'mono'];
@@ -380,14 +380,20 @@
     else if (c === 'home') { stop(); show('home'); }
   }
   setInterval(function () { if (remote.es) publishState(); }, 30000);
+  // ntfy envoie un keepalive ~toutes les 55 s : sans rien reçu depuis 2 min, la connexion est morte en silence
+  setInterval(function () { if (remote.es && Date.now() - (remote.beat || 0) > 120000) remoteConnect(); }, 20000);
   function remoteStatus(t) { if (remote.st) remote.st.textContent = t; }
   function remoteConnect() {
     if (remote.es) { remote.es.close(); remote.es = null; }
     if (!window.EventSource) return remoteStatus('Télécommande indisponible sur cette TV');
     var es = remote.es = new EventSource(REMOTE_BASE + topic() + '/sse');
-    es.onopen = function () { remoteStatus('Télécommande connectée'); publishState(); };
-    es.onerror = function () { remoteStatus('Télécommande : reconnexion…'); };
+    remote.beat = Date.now();
+    es.onopen = function () { remote.beat = Date.now(); remoteStatus('Télécommande connectée'); publishState(); };
+    es.onerror = function () { remoteStatus('Télécommande : reconnexion…'); if (es.readyState === 2) setTimeout(remoteConnect, 3000); };
+    es.addEventListener('keepalive', function () { remote.beat = Date.now(); });
+    es.addEventListener('open', function () { remote.beat = Date.now(); });
     es.onmessage = function (ev) {
+      remote.beat = Date.now();
       try {
         var j = JSON.parse(ev.data);
         if (j.event && j.event !== 'message') return;

@@ -203,19 +203,31 @@ nav button.sel { background:var(--acc); color:var(--on); }
     [].forEach.call(document.querySelectorAll('#glows button'), function (b) { b.classList.toggle('sel', b.dataset.v === tv.glow); });
     [].forEach.call(document.querySelectorAll('#intens button'), function (b) { b.classList.toggle('sel', b.dataset.v === String(tv.inten)); });
   }
+  var es = null, beat = 0;
   function listen() {
-    var es = new EventSource(BASE + topic + '/sse');
-    es.onopen = function () { send('ping'); };
+    if (es) { try { es.close(); } catch (e) {} }
+    beat = Date.now();
+    es = new EventSource(BASE + topic + '/sse?since=3m');
+    es.onopen = function () { beat = Date.now(); send('ping'); };
+    es.onerror = function () { if (es.readyState === 2) setTimeout(listen, 3000); };
+    es.addEventListener('keepalive', function () { beat = Date.now(); });
     es.onmessage = function (ev) {
+      beat = Date.now();
       try {
         var j = JSON.parse(ev.data), t = String(j.message || '');
         if (j.event && j.event !== 'message') return; if (j.id === seen) return; seen = j.id;
         if (t.indexOf('state:') !== 0) return;
-        var s = JSON.parse(t.slice(6)); tv.at = Date.now(); tv.theme = s.theme; tv.glow = s.glow; tv.inten = s.inten;
+        var s = JSON.parse(t.slice(6)), at = (j.time || 0) * 1000;
+        if (at < tv.at) return;
+        tv.at = at || Date.now(); tv.theme = s.theme; tv.glow = s.glow; tv.inten = s.inten;
         if (s.theme) skin(s.theme); if (s.v) $('#ver').textContent = 'Version TV ' + s.v; paint();
       } catch (e) {}
     };
   }
+  // iOS coupe la connexion quand l'app passe en arrière-plan : on la rétablit au retour
+  function wake() { if (document.hidden) return; listen(); }
+  document.addEventListener('visibilitychange', wake); window.addEventListener('pageshow', wake); window.addEventListener('online', wake); window.addEventListener('focus', function () { if (Date.now() - beat > 70000) wake(); });
+  setInterval(function () { if (document.hidden) return; if (Date.now() - beat > 100000) listen(); else if (Date.now() - tv.at > 40000) post('ping').catch(function () {}); }, 20000);
   setInterval(paint, 5000); listen();
 
   /* ---- onglets ---- */
