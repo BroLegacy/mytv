@@ -178,3 +178,26 @@ body.vstream main{top:40px;bottom:176px}
 #dSyn{margin:0;font-size:28px;line-height:1.35;display:-webkit-box;-webkit-line-clamp:7;-webkit-box-orient:vertical;overflow:hidden}
 #dNote{font-size:26px;color:var(--mut)}
 #dBtns{margin-top:auto}
+
+/* réglages : disposition fixe (thème | halo / playlist | màj | télécommande / options), tout tient dans l'écran */
+#settings:not([hidden]){grid-template-columns:repeat(3,minmax(0,1fr));grid-template-rows:auto auto auto;grid-auto-rows:auto;gap:24px;align-content:start;overflow:hidden}
+#settings .card{padding:24px 32px;gap:16px;min-height:0;overflow:hidden}
+#settings .card h3{font-size:26px}
+#settings > .card:nth-child(1){grid-column:1 / span 2;grid-row:1}
+#settings > .card:nth-child(2){grid-column:3;grid-row:1}
+#settings > .card:nth-child(3){grid-column:1;grid-row:2}
+#settings > .card:nth-child(4){grid-column:2;grid-row:2}
+#settings > #remoteCard{grid-column:3;grid-row:2 / span 2}
+#settings > .card.c3{grid-column:1 / span 2;grid-row:3}
+#settings .theme{height:112px;gap:10px;font-size:26px}
+#settings .card .pill{height:64px;padding:0 28px;font-size:26px}
+#settings .card input.f{height:64px;font-size:24px}
+#settings .card > .row.wrap{gap:12px}
+#remoteCard .rm{flex-direction:column;align-items:flex-start;gap:16px}
+#remoteCard img{width:210px;height:210px}
+#remoteSide{gap:10px}
+#remoteLink{font-size:15px}
+#settings .card .pill{height:56px;padding:0 24px;font-size:24px}
+#settings .card.c3 .pill{padding:0 18px;font-size:22px}
+#settings .card.c3 .row{gap:12px}
+#optRefMsg{font-size:20px}
