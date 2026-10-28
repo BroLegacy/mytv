@@ -160,31 +160,34 @@ nav button.sel { background:var(--acc); color:var(--on); }
   }
   function loadJsQR(cb) {
     if (window.jsQR) return cb(); var s = document.createElement('script');
-    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.min.js'; s.onload = cb; s.onerror = function () { $('#scanMsg').textContent = 'Scanner indisponible : colle le lien ci-dessous.'; };
+    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.min.js'; s.onload = function () { cb(); }; s.onerror = function () { $('#scanMsg').textContent = 'Scanner indisponible : colle le lien ci-dessous.'; };
     document.head.appendChild(s);
   }
   var scanning = false;
   function startScan() {
     if (scanning) return; var v = $('#scanVid'), msg = $('#scanMsg');
-    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { $('#scanBox').style.display = 'block'; msg.textContent = 'Caméra indisponible : colle le lien ci-dessous.'; return; }
-    $('#scanBox').style.display = 'block'; msg.textContent = 'Autorise la caméra, puis vise le QR code de la TV…';
-    navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' } }, audio: false }).then(function (st) {
-      scanning = true; v.srcObject = st; v.play();
-      var det = window.BarcodeDetector ? new BarcodeDetector({ formats: ['qr_code'] }) : null, cv = document.createElement('canvas'), cx = cv.getContext('2d');
-      function done(t) { if (link(t)) { scanning = false; st.getTracks().forEach(function (x) { x.stop(); }); } }
+    $('#scanBox').style.display = 'block';
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { msg.textContent = 'Caméra indisponible : colle le lien ci-dessous.'; return; }
+    msg.textContent = 'Autorise la caméra…';
+    loadJsQR(function () {});
+    navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false }).then(function (st) {
+      scanning = true; v.setAttribute('playsinline', ''); v.muted = true; v.srcObject = st; var pl = v.play(); if (pl && pl.catch) pl.catch(function () {});
+      var det = null; try { if (window.BarcodeDetector) det = new BarcodeDetector({ formats: ['qr_code'] }); } catch (e) {}
+      var cv = document.createElement('canvas'), cx = cv.getContext('2d', { willReadFrequently: true }), n = 0;
+      function done(t) { if (!scanning) return; if (link(t)) { scanning = false; st.getTracks().forEach(function (x) { x.stop(); }); } else msg.textContent = 'QR code non reconnu : scanne celui de la TV.'; }
       function tick() {
         if (!scanning) return;
         if (v.readyState >= 2 && v.videoWidth) {
-          if (det) { det.detect(v).then(function (r) { if (r.length) done(r[0].rawValue); }).catch(function () {}); }
-          else if (window.jsQR) {
-            var w = Math.min(640, v.videoWidth), h = Math.round(w * v.videoHeight / v.videoWidth); cv.width = w; cv.height = h; cx.drawImage(v, 0, 0, w, h);
-            var q = jsQR(cx.getImageData(0, 0, w, h).data, w, h); if (q) done(q.data);
-          }
+          n++; msg.textContent = 'Vise le QR code (garde-le bien net, ' + (n % 2 ? '·' : '··') + ')';
+          var vw = v.videoWidth, vh = v.videoHeight, s = Math.min(vw, vh), sx = (vw - s) / 2, sy = (vh - s) / 2, w = Math.min(800, s);
+          cv.width = w; cv.height = w; cx.drawImage(v, sx, sy, s, s, 0, 0, w, w);
+          if (window.jsQR) { var q = jsQR(cx.getImageData(0, 0, w, w).data, w, w, { inversionAttempts: 'attemptBoth' }); if (q && q.data) return done(q.data); }
+          if (det) { det.detect(cv).then(function (r) { if (r.length) done(r[0].rawValue); }).catch(function () {}); }
         }
-        setTimeout(tick, 150);
+        setTimeout(tick, 120);
       }
-      if (det) tick(); else loadJsQR(tick);
-    }).catch(function () { msg.textContent = 'Caméra refusée : autorise-la dans les réglages, ou colle le lien ci-dessous.'; });
+      tick();
+    }).catch(function () { msg.textContent = 'Caméra refusée : autorise-la dans Réglages > Safari > Caméra, ou colle le lien ci-dessous.'; });
   }
   $('#scanBtn').onclick = startScan;
   $('#codeOk').onclick = function () { if (!link($('#codeIn').value)) toast('Code invalide'); };
