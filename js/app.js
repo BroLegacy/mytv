@@ -1,6 +1,6 @@
 (function () {
   'use strict';
-  var VERSION = '1.6.0'; window.MYTV_VERSION = VERSION;
+  var VERSION = '1.6.1'; window.MYTV_VERSION = VERSION;
   var UPDATE_URL = 'https://brolegacy.github.io/mytv/version.json'; // TizenBrew met aussi l'app à jour tout seul
   var DEFAULT_M3U = 'https://iptv-org.github.io/iptv/countries/fr.m3u';
   var THEMES = ['aurora', 'sunset', 'forest', 'mono'];
@@ -969,7 +969,7 @@
   }
 
   /* ---------- télécommande téléphone (relais ntfy.sh) ---------- */
-  var RELAY = ''; // URL du relais perso (Cloudflare Worker, voir relay/) ; vide = ntfy.sh
+  var RELAY = 'https://mytv-relay.mytv-coran.workers.dev/'; // URL du relais perso (Cloudflare Worker, voir relay/) ; vide = ntfy.sh
   var REMOTE_BASE = RELAY || 'https://ntfy.sh/', REMOTE_PAGE = 'https://brolegacy.github.io/mytv/remote.html';
   var QR_LIB = 'https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js';
   var KEYS = { up: 38, down: 40, left: 37, right: 39, ok: 13, back: 10009 };
