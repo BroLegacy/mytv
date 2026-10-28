@@ -160,7 +160,7 @@ nav button.sel { background:var(--acc); color:var(--on); }
   }
   function loadJsQR(cb) {
     if (window.jsQR) return cb(); var s = document.createElement('script');
-    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.min.js'; s.onload = function () { cb(); }; s.onerror = function () { $('#scanMsg').textContent = 'Scanner indisponible : colle le lien ci-dessous.'; };
+    s.src = 'https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js'; s.onload = function () { cb(); }; s.onerror = function () { $('#scanMsg').textContent = 'Scanner indisponible : colle le lien ci-dessous.'; };
     document.head.appendChild(s);
   }
   var scanning = false;
